@@ -1,2 +1,2 @@
-# dptools
-Assorted scripts and CLI for training and applying DeePMD models
+# DPTools
+Assorted scripts and CLI for training and applying MLPs trained in deepmd-kit
