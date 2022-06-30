@@ -76,7 +76,7 @@ class DeepInput:
         self.write_types()
         self.write_npy("train", ":" + str(n_train))
         self.write_npy("validation", str(n_train) + ":" + str(n_val))
-        self.write_npy("test", str(-n_val) + ":")
+        self.write_npy("test", str(n_val) + ":")
 
     def write_npy(self, dataset, indices):
         indices = string2index(indices)
@@ -92,6 +92,7 @@ class DeepInput:
             elements = np.unique(symbols)
             type_keys = {e: i for i, e in enumerate(elements)}
         else:
+            # inverting type_map, confusing and should probably be reworked
             type_keys = {v: k for k, v in self.type_map.items()}
 
         types = [type_keys[s] for s in symbols]
@@ -104,9 +105,9 @@ class DeepInput:
 
 
 class DeepInputs(DeepInput):
-    def __init__(self, db_names, atoms=None, system_names=None, type_map=None, n=None):
+    def __init__(self, db_names, atoms=None, system_names=None, type_map=None, n=None, path="./data"):
         if atoms is None:
-            atoms = [None] * len(db_names)
+            atoms = self.get_atoms(db_names)
         elif not isinstance(atoms, list):
             atoms = [atoms]
         if system_names is None:
@@ -115,44 +116,80 @@ class DeepInputs(DeepInput):
             system_names = [system_names]
         if isinstance(db_names, str):
             db_names = [db_names]
+        if type_map is None:
+            type_map = self.get_type_map(atoms)
+
+        self.type_map = type_map
 
         for db, a, sys in zip(db_names, atoms, system_names):
-            dpi = DeepInput(db, a, sys, type_map, n)
-
-        self.type_map = dpi.type_map
+            dpi = DeepInput(db, a, sys, self.type_map, n)
 
         self.get_json()
         self.update_json()
         self.write_json()
 
     def get_json(self):
-        url = 'https://raw.githubusercontent.com/deepmodeling/deepmd-kit/master/examples/water/se_e3/input.json'
+        url = "https://raw.githubusercontent.com/deepmodeling/deepmd-kit/master/examples/water/se_e3/input.json"
         r = requests.get(url, allow_redirects=True)
         self.input_json = json.loads(r.content)
 
     def update_json(self):
-        # TODO: make this more customizable
         types = [self.type_map[i] for i in range(len(self.type_map))]
-        systems = glob.glob('data/*') # don't put other files here
+        # TODO: implement customizable path
+        systems = glob.glob("data/*") # don't put other files here
         systems.sort()
 
-        self.input_json['model']['type_map'] = types
-        self.input_json['model']['descriptor']['type'] = 'se_e2_a'
-        self.input_json['model']['descriptor']['neuron'] = [16, 32, 64]
-        self.input_json['model']['descriptor']['rcut'] = 6.0
-        self.input_json['model']['descriptor']['rcut_smth'] = 5.5
-        self.input_json['model']['descriptor']['axis_neuron'] = 16
-        self.input_json['model']['fitting_net']['neuron'] = [64, 64, 64]
-        self.input_json['training']['training_data']['systems'] = [f'{os.getcwd()}/{s}/train' for s in systems]
-        self.input_json['training']['validation_data']['systems'] = [f'{os.getcwd()}/{s}/validation' for s in systems]
-        self.input_json['training']['numb_steps'] = 1000000
-        self.input_json['training']['disp_freq'] = 1000
-        self.input_json['training']['save_freq'] = 100000
+        # TODO: make this more customizable
+        self.input_json["model"]["type_map"] = types
+        self.input_json["model"]["descriptor"]["type"] = "se_e2_a"
+        self.input_json["model"]["descriptor"]["neuron"] = [16, 32, 64]
+        self.input_json["model"]["descriptor"]["rcut"] = 6.0
+        self.input_json["model"]["descriptor"]["rcut_smth"] = 5.5
+        self.input_json["model"]["descriptor"]["axis_neuron"] = 16
+        self.input_json["model"]["fitting_net"]["neuron"] = [64, 64, 64]
+        self.input_json["training"]["training_data"]["systems"] = [f"{os.getcwd()}/{s}/train" for s in systems]
+        self.input_json["training"]["validation_data"]["systems"] = [f"{os.getcwd()}/{s}/validation" for s in systems]
+        self.input_json["training"]["numb_steps"] = 1000000
+        self.input_json["training"]["disp_freq"] = 1000
+        self.input_json["training"]["save_freq"] = 100000
 
     def write_json(self):
         json_str = json.dumps(self.input_json, indent=4)
-        with open('in.json', 'w') as file:
+        with open("in.json", "w") as file:
             file.write(json_str)
+
+    def get_atoms(self, db_names):
+        atoms = []
+        for dbn in db_names:
+            with connect(dbn) as db:
+                for row in db.select():
+                    atoms.append(row.toatoms())
+                    break
+        return atoms
+
+    def get_type_map(self, atoms):
+        # TODO: put the print stuff in the cli section
+        if "type_map.json" in os.listdir():
+            print("READING type_map.json")
+            with open("type_map.json", "r") as file:
+                type_map = json.loads(file.read())
+            type_map = {int(i): s for i, s in type_map.items()}
+        else:
+            symbols = []
+            for a in atoms:
+                symbols.extend(np.unique(a.get_chemical_symbols()))
+
+            symbols = np.unique(symbols)
+            type_map = {i: s for i, s in enumerate(symbols)}
+            print("WRITING TYPE MAP TO type_map.json")
+            with open("type_map.json", "w") as file:
+                file.write(json.dumps(type_map, indent=2))
+
+        print("TYPES:")
+        for i, t in type_map.items():
+            print(f"\t{i}\t{t}")
+
+        return type_map
 
 
 if __name__ == '__main__':
@@ -162,15 +199,15 @@ if __name__ == '__main__':
     n = None
     db_names = []
     for arg in sys.argv[1:]:
-        if '-n' in arg:
-            n = int(arg.split('=')[-1])
-        elif '.db' in arg:
+        if "-n" in arg:
+            n = int(arg.split("=")[-1])
+        elif ".db" in arg:
             db_names.append(arg)
 
     sys_names = []
     for db in db_names:
-        dbn = db.split('/')[-1].split('.db')[0]
+        dbn = db.split("/")[-1].split(".db")[0]
         sys_names.append(dbn)
 
-    type_map = {0: 'C', 1: 'H', 2: 'N', 3: 'Zn'} # safer to set this manually
+    type_map = {0: "C", 1: "H", 2: "O"} # safer to set this manually
     thing = DeepInputs(db_names, system_names=sys_names, type_map=type_map, n=n)
