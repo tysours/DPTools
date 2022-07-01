@@ -168,7 +168,7 @@ class DeepInputs(DeepInput):
         return atoms
 
     def get_type_map(self, atoms):
-        # TODO: put the print stuff in the cli section
+        # TODO: put the print stuff in the cli section?
         if "type_map.json" in os.listdir():
             print("READING type_map.json")
             with open("type_map.json", "r") as file:
@@ -192,22 +192,23 @@ class DeepInputs(DeepInput):
         return type_map
 
 
-if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        raise Exception("Usage:\tdp_input.py [-n=size_of_training_set] system1.db [system2.db...]")
+class CLI:
+    def __init__(self, parser):
+        self.parser = parser
 
-    n = None
-    db_names = []
-    for arg in sys.argv[1:]:
-        if "-n" in arg:
-            n = int(arg.split("=")[-1])
-        elif ".db" in arg:
-            db_names.append(arg)
+    def add_args(self):
+        self.parser.add_argument("dbs", nargs='+', metavar="db", help="ASE .db files")
+        self.parser.add_argument("-e", "--ensemble", action="store_true",
+                help="Make ensemble (4) of DP models to train")
+        self.parser.add_argument("-n", nargs=1, type=int,
+                help="Max number of images to take from each db")
+        self.parser.add_argument("-p", "--path", nargs=1, type=str, default="./data",
+                help="Specify path to dataset directory")
 
-    sys_names = []
-    for db in db_names:
-        dbn = db.split("/")[-1].split(".db")[0]
-        sys_names.append(dbn)
-
-    type_map = {0: "C", 1: "H", 2: "O"} # safer to set this manually
-    thing = DeepInputs(db_names, system_names=sys_names, type_map=type_map, n=n)
+    def main(self, args):
+        if args.ensemble:
+            raise NotImplementedError("ensemble work in progress, sorry")
+        elif args.n:
+            raise NotImplementedError("n needs to be reworked, sorry")
+        sys_names = [db.split("/")[-1].split(".db")[0] for db in args.dbs]
+        thing = DeepInputs(args.dbs, system_names=sys_names)
