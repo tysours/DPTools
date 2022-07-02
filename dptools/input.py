@@ -10,6 +10,8 @@ from sklearn.utils import shuffle
 import json
 import requests
 
+from dptools.cli import BaseCLI
+
 class DeepInput:
     def __init__(self, db_name, atoms=None, system_name=None, type_map=None, n=None):
         self.db_name = db_name
@@ -192,10 +194,7 @@ class DeepInputs(DeepInput):
         return type_map
 
 
-class CLI:
-    def __init__(self, parser):
-        self.parser = parser
-
+class CLI(BaseCLI):
     def add_args(self):
         self.parser.add_argument("dbs", nargs='+', metavar="db", help="ASE .db files")
         self.parser.add_argument("-e", "--ensemble", action="store_true",
@@ -207,8 +206,8 @@ class CLI:
 
     def main(self, args):
         if args.ensemble:
-            raise NotImplementedError("ensemble work in progress, sorry")
+            raise NotImplementedError("ensemble work in progress, sorry (harass me if you need it)")
         elif args.n:
-            raise NotImplementedError("n needs to be reworked, sorry")
+            raise NotImplementedError("n needs to be reworked, sorry (harass me if you need it)")
         sys_names = [db.split("/")[-1].split(".db")[0] for db in args.dbs]
         thing = DeepInputs(args.dbs, system_names=sys_names)
