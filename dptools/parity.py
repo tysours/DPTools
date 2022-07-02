@@ -2,16 +2,17 @@
 
 from ase.io import read
 from ase.db import connect
-from deepmd.infer import DeepPot as DP
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import sys
 import os
+from dptools.cli import BaseCLI
 
 colors = sns.color_palette('deep')
 class EvaluateDeepMD:
     def __init__(self, test_sets, dp_graph='graph.pb', save_plot=False):
+        from deepmd.infer import DeepPot as DP
         self.dp = DP(dp_graph)
         if isinstance(test_sets, str):
             test_sets = [test_sets]
@@ -20,9 +21,6 @@ class EvaluateDeepMD:
         self.forces = []
         self.virials = []
         self.sets = test_sets
-        #with open('sets', 'w') as file:
-        #    for s in self.sets:
-        #        file.write(f'{s}\n')
         for test_set in self.sets:
             energies, forces, virials = self.evaluate(test_set)
             self.energies.append(energies)
@@ -78,6 +76,16 @@ class EvaluateDeepMD:
         ax.set_ylim([xmin, xmax])
         return
 
+    def plot_parity(self, data, label, color, loss='mse', ax=None):
+        if ax is None:
+            ax = plt.gca()
+        err = getattr(self, f"get_{loss.lower()}")(data)
+        ax.plot(data[:, 0], data[:, 1], "o", ms=3, color=color, alpha=0.20)
+        ax.annotate(f"{loss.upper()} = {err:.3e}", xy=(0.1, 0.85), xycoords="axes fraction", fontsize=12)
+        self.plot_yx(data[:, 0], ax)
+        ax.set_ylabel(f"DP {label}", fontsize=14)
+        ax.set_xlabel(f"DFT {label}", fontsize=14)
+        ax.tick_params(labelsize=12)
 
     def plot(self, axs=None):
         if axs is None:
@@ -93,25 +101,10 @@ class EvaluateDeepMD:
         e_data = np.vstack(self.energies)
         f_data = np.vstack(self.forces)
 
-        axs[0].plot(e_data[:,0], e_data[:,1], 'o', ms=3, color=colors[3], alpha=0.25)
-        axs[0].annotate(f"MSE = {self.mse[0]:.3e}", xy=(0.1, 0.85), xycoords='axes fraction', fontsize=12)
-        self.plot_yx(e_data[:,0], axs[0])
-        axs[0].set_ylabel('DP Energy (eV)', fontsize=14)
-        axs[0].set_xlabel('DFT Energy (eV)', fontsize=14)
-        axs[0].tick_params(labelsize=12)
-        axs[1].plot(f_data[:,0], f_data[:,1], 'o', color=colors[0], ms=3, alpha=0.15)
-        axs[1].annotate(f"MSE = {self.mse[1]:.3e}", xy=(0.1, 0.85), xycoords='axes fraction', fontsize=12)
-        axs[1].set_ylabel('DP Force (eV/Å)', fontsize=14)
-        axs[1].set_xlabel('DFT Force (eV/Å)', fontsize=14)
-        axs[1].tick_params(labelsize=12)
-        self.plot_yx(f_data[:,0], axs[1])
+        self.plot_parity(e_data, "Energy (eV)", colors[3], ax=axs[0])
+        self.plot_parity(f_data, "Force (eV/Å)", colors[0], ax=axs[1])
         if len(axs) == 3:
-            axs[2].plot(v_data[:,0], v_data[:,1], 'o', ms=3, color=colors[2], alpha=0.2)
-            axs[2].annotate(f"MSE = {self.v_mse:.3e}", xy=(0.1, 0.85), xycoords='axes fraction', fontsize=12)
-            self.plot_yx(v_data[:,0], axs[2])
-            axs[2].set_ylabel('DP Virial (virial units?)', fontsize=14)
-            axs[2].set_xlabel('DFT Virial (virial units?)', fontsize=14)
-            axs[2].tick_params(labelsize=12)
+            self.plot_parity(v_data, "Virial", colors[2], ax=axs[2])
         plt.tight_layout()
         plt.subplots_adjust(wspace=0.3)
         if self.save:
@@ -120,36 +113,17 @@ class EvaluateDeepMD:
             plt.show()
 
 
-class ShiftDP(EvaluateDeepMD):
-    def __init__(self, test_sets, dp_graph='graph.pb', save_plot=False):
-        from zeoml.cifs.data import opts
-        super.__init__(test_sets, dp_graph=dp_graph, save_plot=save_plot)
+class CLI(BaseCLI):
+    def add_args(self):
+        self.parser.add_argument("systems", nargs="*", metavar="system", help="Paths to deepmd-kit dataset folders, .traj, .db, etc.")
+        #self.parser.add_argument("-e", "--ensemble", action="store_true",
+        #        help="Make ensemble (4) of DP models to train")
+        self.parser.add_argument("-m", "--model", nargs=1, type=str, default="./graph.pb",
+                help="Specify path of frozen .pb deepmd model to use")
 
-    def evaluate(self, test_set):
-        coord = np.load(f'{test_set}/coord.npy')
-        cell = np.load(f'{test_set}/box.npy')
-        atype = np.loadtxt(f'{test_set}/../type.raw', dtype=int)
-        e, f, v = self.dp.eval(coord, cell, atype)
-        opt_e = self.dp.eval(opts[code]['positions'], opts[code]['cell'], opts[code]['types'])
-        print(opt_e)
-        e = e.flatten() - opt_e
-        f = f.flatten()
-        v = v.flatten()
-
-        code = test_set.split('/')[1]
-
-        real_e = np.load(f'{test_set}/energy.npy')
-        real_e -= opts[code]['energy']
-        real_f = np.load(f'{test_set}/force.npy').flatten()
-        if 'virial.npy' in os.listdir(test_set):
-            real_v = np.load(f'{test_set}/virial.npy').flatten()
-            virials = np.append(real_v[:, np.newaxis], v[:, np.newaxis], axis=1)
-        else:
-            virials = None
-
-        energies = np.append(real_e[:, np.newaxis], e[:, np.newaxis], axis=1)
-        forces = np.append(real_f[:, np.newaxis], f[:, np.newaxis], axis=1)
-        return energies, forces, virials
+    def main(self, args):
+        print(args)
+        print("hey")
 
 
 if __name__ == '__main__':
