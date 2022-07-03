@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import sys
 import os
+import json
 from dptools.cli import BaseCLI
 
 colors = sns.color_palette('deep')
@@ -115,36 +116,26 @@ class EvaluateDeepMD:
 
 class CLI(BaseCLI):
     def add_args(self):
+        # TODO: add more optional args (e.g. save plot)
         self.parser.add_argument("systems", nargs="*", metavar="system", help="Paths to deepmd-kit dataset folders, .traj, .db, etc.")
-        #self.parser.add_argument("-e", "--ensemble", action="store_true",
-        #        help="Make ensemble (4) of DP models to train")
         self.parser.add_argument("-m", "--model", nargs=1, type=str, default="./graph.pb",
                 help="Specify path of frozen .pb deepmd model to use")
 
     def main(self, args):
         print(args)
-        print("hey")
+        if len(args.systems) > 0:
+            systems = args.systems
+        else:
+            systems = self.read_systems()
+        evaldpmd = EvaluateDeepMD(systems, dp_graph=args.model)
+        evaldpmd.plot()
 
 
-if __name__ == '__main__':
-    test_sets = 'data/test.set'
-    save = False
-    model_name = 'graph.pb'
-    if len(sys.argv) > 1:
-        test_sets = []
-        for arg in sys.argv[1:]:
-            if arg == '-s':
-                save = True
-            elif '-m' in arg:
-                model_name = arg.split('=')[-1]
-            else:
-                test_sets.append(arg)
-
-    if model_name not in os.listdir():
-        os.system(f'dp freeze -o {model_name}')
-
-    import time
-    ti = time.time()
-    thing = EvaluateDeepMD(test_sets, dp_graph=model_name, save_plot=save)
-    print((time.time() - ti)/60, 'MINUTES')
-    thing.plot()
+    @staticmethod
+    def read_systems():
+        if "in.json" not in os.listdir():
+            raise FileNotFoundError("Systems not specified and no in.json in $PWD")
+        with open("in.json") as file:
+            params = json.loads(file.read())
+        systems = params["training"]['training_data']['systems']
+        return [f"{s.split('/train')[0]}/test/set.000" for s in systems]
