@@ -13,12 +13,13 @@ import requests
 from dptools.cli import BaseCLI
 
 class DeepInput:
-    def __init__(self, db_name, atoms=None, system_name=None, type_map=None, n=None):
+    def __init__(self, db_name, atoms=None, system_name=None, type_map=None, n=None, path="./data"):
         self.db_name = db_name
         if atoms is not None:
             self.atoms = atoms
         self.system_name = system_name
         self.n = n
+        self.path = path
         self.type_map = type_map
         self.set_dataset()
         self.write_input()
@@ -61,7 +62,7 @@ class DeepInput:
         else:
             system_name = self.system_name
 
-        data_path = os.path.join("data", system_name)
+        data_path = os.path.join(self.path, system_name)
         sets = ["train", "validation", "test"]
         self.paths = {s: os.path.join(data_path, s, "set.000") for s in sets}
         for s, path in self.paths.items():
@@ -121,10 +122,11 @@ class DeepInputs(DeepInput):
         if type_map is None:
             type_map = self.get_type_map(atoms)
 
+        self.path = path
         self.type_map = type_map
 
         for db, a, sys in zip(db_names, atoms, system_names):
-            dpi = DeepInput(db, a, sys, self.type_map, n)
+            dpi = DeepInput(db, a, sys, self.type_map, n=n, path=path)
 
         self.get_json()
         self.update_json()
@@ -137,8 +139,7 @@ class DeepInputs(DeepInput):
 
     def update_json(self):
         types = [self.type_map[i] for i in range(len(self.type_map))]
-        # TODO: implement customizable path
-        systems = glob.glob("data/*") # don't put other files here
+        systems = glob.glob(f"{self.path}/*") # don't put other files here
         systems.sort()
 
         # TODO: make this more customizable
@@ -149,6 +150,7 @@ class DeepInputs(DeepInput):
         self.input_json["model"]["descriptor"]["rcut_smth"] = 5.5
         self.input_json["model"]["descriptor"]["axis_neuron"] = 16
         self.input_json["model"]["fitting_net"]["neuron"] = [64, 64, 64]
+        # TODO: change how the system paths are created, probably will have issues like this v v v
         self.input_json["training"]["training_data"]["systems"] = [f"{os.getcwd()}/{s}/train" for s in systems]
         self.input_json["training"]["validation_data"]["systems"] = [f"{os.getcwd()}/{s}/validation" for s in systems]
         self.input_json["training"]["numb_steps"] = 1000000
@@ -210,4 +212,4 @@ class CLI(BaseCLI):
         elif args.n:
             raise NotImplementedError("n needs to be reworked, sorry (harass me if you need it)")
         sys_names = [db.split("/")[-1].split(".db")[0] for db in args.dbs]
-        thing = DeepInputs(args.dbs, system_names=sys_names)
+        thing = DeepInputs(args.dbs, system_names=sys_names, path=args.path[0])
