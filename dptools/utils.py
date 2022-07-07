@@ -73,6 +73,11 @@ def read_db(db_name, indices):
         traj = [row.toatoms() for row in db.select()]
     return traj[string2index(indices)]
 
+def graph2typemap(graph):
+    from deepmd import DeepPotential
+    dp = DeepPotential(graph)
+    type_map = {sym: i for i, sym in enumerate(dp.get_type_math())}
+    return type_map
 
 class Converter:
     def __init__(self, inputs, output, indices=":"):
