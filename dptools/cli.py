@@ -7,6 +7,7 @@ command2module = {
     "parity": "dptools.parity",
     #"run": "dptools.input",
     #"sample": "dptools.sample",
+    "convert": "dptools.utils",
 }
 
 class BaseCLI:
@@ -38,6 +39,5 @@ def main():
         cli.add_args()
         command_clis[comm] = cli
 
-    print(command_clis)
     parsed_args = parser.parse_args()
     command_clis[parsed_args.command].main(parsed_args)
