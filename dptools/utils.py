@@ -76,7 +76,7 @@ def read_db(db_name, indices):
 def graph2typemap(graph):
     from deepmd import DeepPotential
     dp = DeepPotential(graph)
-    type_map = {sym: i for i, sym in enumerate(dp.get_type_math())}
+    type_map = {sym: i for i, sym in enumerate(dp.get_type_map())}
     return type_map
 
 class Converter:
