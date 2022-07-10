@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #import lammps
 import numpy as np
 import os
@@ -45,7 +44,7 @@ class LammpsInput:
                  pair_style='lj/cut/coul/long',
                  bond_style=None,
                  angle_style=None,
-                 kspace_style='pppm 1.0e-5',
+                 kspace_style=None,
                  groups=None,
                  coeffs=None,
                  pair_coeffs=None,
@@ -62,20 +61,33 @@ class LammpsInput:
             sf = [1, 1]
 
         self.atoms = atoms
+
+        # key parameters and system info for writing lammps input + data file
+        self.info = {"data": {},
+                     "input": {}}
+
         self.types = types
         self.coeffs = coeffs
         self.pair_coeffs = pair_coeffs
         self.charges = charges
         self.groups = groups
-        self.atom_style = atom_style
-        self.pair_style = pair_style
-        self.angle_style = angle_style
-        self.bond_style = bond_style
-        self.kspace_style = kspace_style
+        self.info["data"]["natoms"] = len(atoms)
+        self.info["data"]["ntypes"] = len(types)
+        self.info["data"]["cell"] = self.atoms.cell
+        self.info["data"]["atom_style"] = atom_style
+        #self.atom_style = atom_style
+        #self.pair_style = pair_style
+        #self.angle_style = angle_style
+        #self.bond_style = bond_style
+        #self.kspace_style = kspace_style
+        self.info["input"]["atom_style"] = atom_style
+        self.info["input"]["pair_style"] = pair_style
+        self.info["input"]["angle_style"] = angle_style
+        self.info["input"]["bond_style"] = bond_style
+        self.info["input"]["kspace_style"] = kspace_style
         self.write_bonds = write_bonds
         self.cutoff = cutoff
         self.sf = sf
-        self.n = len(atoms)
         self.symbols = np.array(atoms.get_chemical_symbols())
         self.name = name
 
@@ -100,7 +112,7 @@ class LammpsInput:
 
 
     def _write_atoms(self, write_bonds=False, atom_style='full'):
-        n_atoms = len(self.atoms)
+        #n_atoms = len(self.atoms)
         n_types = len(self.types.keys())
 
         types_str = ""
@@ -134,24 +146,34 @@ class LammpsInput:
         #### BONDS ####
         if write_bonds:
             bonds_str = self.get_bonds()
-            n_bonds = self.n_bonds
-            n_b_types = self.n_b_types
+            #n_bonds = self.n_bonds
+            #n_b_types = self.n_b_types
         else:
             bonds_str = ""
-            n_bonds = 0
-            n_b_types = 0
+            #n_bonds = 0
+            #n_b_types = 0
+            self.info["data"]["nbonds"] = 0
+            self.info["data"]["nbtypes"] = 0
+
+        self.info["data"]["types"] = types_str
+        self.info["data"]["coords"] = coords_str
+        self.info["data"]["coeffs"] = coeffs_str
+        self.info["data"]["bonds"] = bonds_str
 
         temp = DataTemplate(self.name)
-        temp.natoms = n_atoms
-        temp.nbonds = n_bonds
-        temp.ntypes = n_types
-        temp.nbtypes = n_b_types
-        temp.cell = self.atoms.cell
-        temp.types = types_str
-        temp.atom_style = atom_style
-        temp.coeffs = coeffs_str
-        temp.coords = coords_str
-        temp.bonds = bonds_str
+        for key, val in self.info["data"].items():
+            temp.set(key, val)
+        #temp.natoms = n_atoms
+        #temp.set("natoms", n_atoms)
+        #temp.nbonds = n_bonds
+        #temp.ntypes = n_types
+        #temp.nbtypes = n_b_types
+        #temp.cell = self.atoms.cell
+        #temp.types = types_str
+        #temp.atom_style = atom_style
+        #temp.coeffs = coeffs_str
+        #temp.coords = coords_str
+        #temp.bonds = bonds_str
 
         temp.write(f"data.{self.name}", temp.data)
 
@@ -171,10 +193,15 @@ class LammpsInput:
             cutoff = ''
 
         temp = InputTemplate(self.name)
-        temp.atom_style = atom_style 
-        temp.pair_style = pair_style
-        temp.bond_style = bond_style
-        temp.angle_style = angle_style
+        #temp.atom_style = atom_style 
+        temp.set("atom_style", atom_style)
+        #temp.pair_style = pair_style
+        temp.set("pair_style", pair_style)
+        #temp.bond_style = bond_style
+        temp.set("angle_style", angle_style)
+
+        # XXX: maybe makes more sense to move this to InputTemplate
+        #      as set_pair_coeffs method etc.
         if self.coeffs is None and self.pair_coeffs is None:
             temp.data += "pair_coeff * *\n"
         if self.pair_coeffs is not None:
@@ -187,6 +214,8 @@ class LammpsInput:
                 raise TypeError("str or list needed for pair_coeffs")
         if kspace_style is not None:
             temp.data += f"kspace_style\t{kspace_style}\n\n"
+
+        # XXX: groups is never None? rework groups eventually
         if groups is not None:
             #print("REMINDER TO REMOVE GROUP HARDCODING")
             temp.data += "group\tsilica molecule 0\n"
@@ -211,8 +240,7 @@ class LammpsInput:
                 else:
                     bond_types[b_type] = [(i, bond)]
             
-        self.n_b_types = len(bond_types.keys())
-        k = 1
+        #self.n_b_types = len(bond_types.keys())
 
         bonds_str = "Bonds\n\n"
         n_bond = 0
@@ -221,15 +249,23 @@ class LammpsInput:
                 bonds_str += f"\t{n_bond+1}\t{i+k}\t{bond[0]+1}\t{bond[1]+1}\n"
                 n_bond += 1
 
-        self.n_bonds = n_bond
+        #self.n_bonds = n_bond
+        self.info["data"]["nbonds"] = n_bond
+        self.info["data"]["nbtypes"] = len(bond_types.keys())
         return bonds_str
 
 class Template:
     def write(self, name, text):
         with open(name, 'w') as file:
             file.write(text)
+    
+    def set(self, name, value):
+        try:
+            getattr(self, f"set_{name}")(value)
+        except AttributeError:
+            self.data = self.data.replace(f"<{name}>", str(value))
 
-        
+
 class DataTemplate(Template):
     def __init__(self, name):
         self.name = name
@@ -295,6 +331,19 @@ class DataTemplate(Template):
     @property
     def cell(self):
         return
+
+    def set_cell(self, atoms_cell):
+        cell = convert_cell(atoms_cell)[0]
+        x = f"0 {cell[0, 0]}"
+        y = f"0 {cell[1, 1]}"
+        z = f"0 {cell[2, 2]}"
+        xy, xz, yz = cell[0, 1], cell[0, 2], cell[1, 2]
+        xyxzyz = f"{xy} {xz} {yz}"
+
+        self.data = self.data.replace("<x>", x)
+        self.data = self.data.replace("<y>", y)
+        self.data = self.data.replace("<z>", z)
+        self.data = self.data.replace("<xyxzyz>", xyxzyz)
 
     @cell.setter
     def cell(self, atoms_cell):
@@ -397,6 +446,13 @@ class InputTemplate(Template):
             self.data = self.data.replace("<bond_style>",
                                           f"bond_style\t{value}")
 
+    def set_bond_style(self, value):
+        if value is None:
+            self.data = self.data.replace("<bond_style>", "")
+        else:
+            self.data = self.data.replace("<bond_style>",
+                                          f"bond_style\t{value}")
+
     @property
     def angle_style(self):
         return
@@ -409,3 +465,9 @@ class InputTemplate(Template):
             self.data = self.data.replace("<angle_style>",
                                           f"angle_style\t{value}")
 
+    def set_angle_style(self, value):
+        if value is None:
+            self.data = self.data.replace("<angle_style>", "")
+        else:
+            self.data = self.data.replace("<angle_style>",
+                                          f"angle_style\t{value}")
