@@ -5,6 +5,7 @@ from ase.calculators.calculator import (
     Calculator, all_changes, PropertyNotImplementedError
 )
 from ase.units import GPa
+#from dptools.utils import graph2typemap
 
 class LmpCalc(Calculator):
     """
@@ -143,14 +144,14 @@ class DeepMD(LmpCalc):
                        **kwargs
                        )
 
-        self.style = f'deepmd {graph}'
+        self.graph = graph
+        self.style = f'deepmd {self.graph}'
 
     def set_atoms(self, atoms=None):
-        if not hasattr(self, '_type_map'):
-            self.set_types(atoms)
-        if 0 in atoms.get_tags():
-            for a in atoms:
-                a.tag = self._type_map[a.symbol]
+        self.set_types(atoms)
+        #if 0 in atoms.get_tags():
+        for a in atoms:
+            a.tag = self._type_map[a.symbol]
 
     def set_charges(self):
         self.charges = np.zeros(len(self.atoms))
@@ -158,12 +159,26 @@ class DeepMD(LmpCalc):
     def set_types(self, atoms=None):
         if atoms is None:
             atoms = self.atoms
-        symbols = np.unique(atoms.get_chemical_symbols())
-        types = {s: i + 1 for i, s in enumerate(symbols)}
-        for a in atoms:
-            a.tag = types[a.symbol]
-        self._type_map = types
-        self.types = {v: k for k, v in types.items()} # inverting dict, probably stupid
+
+        if not hasattr(self, '_type_map'):
+            raise NotImplementedError("Automatic detection of type_map not working, "
+                        "please manually specify type_map")
+
+            # TODO: Figure out why this fails, need to manually specify type_map until then
+            # Automatically determines type_map from self.graph
+            #from deepmd import DeepPotential
+            #dp = DeepPotential(self.graph)
+            #type_map = {sym: i for i, sym in enumerate(dp.get_type_map())}
+            self._type_map = graph2typemap(self.graph)
+
+        # lammps type indexing needs to start at 1, not 0
+        if 0 in self._type_map.values():
+            self._type_map = {sym: i + 1 for sym, i in self._type_map.items()}
+        #for a in atoms:
+        #    a.tag = self._type_map[a.symbol]
+
+        # need to invert dict for lammps_io - a bit confusing, probably rework
+        self.types = {v: k for k, v in self._type_map.items()} 
 
     def set_coeffs(self):
         self.coeffs = None
@@ -193,7 +208,7 @@ class DeepMD(LmpCalc):
 
 
 class ClayFF(LmpCalc):
-    """class for the classical ClayFF. Unused for deepmd but I will leave it here for future reference"""
+    """class for the classical ClayFF force field. Unused for deepmd but I will leave it here for future reference"""
     name = "ClayFF"
     implemented_properties = ["energy", "forces", "stress"]
     def __init__(self, 

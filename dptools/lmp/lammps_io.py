@@ -99,14 +99,14 @@ class LammpsInput:
             self.set_atoms(atoms)
         if charges is not None:
             self.charges = charges
-        self._write_atoms(self.write_bonds, self.atom_style)
+        self._write_atoms(self.write_bonds, self.info["data"]["atom_style"])
 
     def write_input(self):
-        self.input = self._get_input(self.atom_style, 
-                                     self.pair_style, 
-                                     self.bond_style, 
-                                     self.angle_style, 
-                                     self.kspace_style, 
+        self.input = self._get_input(self.info["input"]["atom_style"],
+                                     self.info["input"]["pair_style"], 
+                                     self.info["input"]["bond_style"], 
+                                     self.info["input"]["angle_style"], 
+                                     self.info["input"]["kspace_style"], 
                                      self.groups, 
                                      self.cutoff)
 
@@ -199,6 +199,7 @@ class LammpsInput:
         temp.set("pair_style", pair_style)
         #temp.bond_style = bond_style
         temp.set("angle_style", angle_style)
+        temp.set("bond_style", bond_style)
 
         # XXX: maybe makes more sense to move this to InputTemplate
         #      as set_pair_coeffs method etc.
