@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 import numpy as np
 from ase.db import connect
 from ase.io.formats import string2index

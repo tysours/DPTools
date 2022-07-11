@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 from ase.io import read
 from ase.db import connect
 import numpy as np
