@@ -24,19 +24,24 @@ class Simulation:
         self.atoms.write(self.file_out)
 
 
-
 class SPE(Simulation):
     def get_commands(self):
         commands = ["run 0"]
         return commands
 
 class Opt(Simulation):
-    def get_commands(self):
-        pass
+    def get_commands(self, nsw=1000, ftol=1e-3, etol=0.0):
+        commands = [f"minimize {etol} {ftol} {nsw} {nsw * 10}"]
+        return commands
 
 class CellOpt(Simulation):
-    def get_commands(self):
-        pass
+    def get_commands(self, nsw=1000, ftol=1e-3, etol=0.0, opt_type="aniso", P=0.0):
+        commands = [
+                f"fix cellopt all box/relax {opt_type} {P}",
+                f"minimize {etol} {ftol} {nsw} {nsw * 10}",
+                 "unfix cellopt",
+                ]
+        return commands
 
 class NVT(Simulation):
     def get_commands(self):
@@ -45,6 +50,8 @@ class NVT(Simulation):
 class NPT(Simulation):
     def get_commands(self):
         pass
+
+Simulations = {"spe": SPE, "opt": Opt, "cellopt": CellOpt, "nvt-md": NVT, "npt-md": NPT}
 
 class CLI(BaseCLI):
     def add_args(self):
@@ -67,7 +74,6 @@ class CLI(BaseCLI):
                 help="Name of file to write calculation output to")
 
     def main(self, args):
-        Simulations = {"spe": SPE, "opt": Opt, "cellopt": CellOpt, "nvt-md": NVT, "npt-md": NPT}
         atoms = read(args.structure[0])
         sim = Simulations[args.calculation[0]](
                 atoms, 
