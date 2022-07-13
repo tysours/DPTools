@@ -2,6 +2,7 @@ from dptools.lmp.calculator import DeepMD
 from ase.io import read
 from dptools.cli import BaseCLI
 import os
+import json
 
 class Simulation:
     def __init__(self, atoms, graph, file_out="atoms.traj", path="./", **kwargs):
@@ -75,11 +76,21 @@ class CLI(BaseCLI):
 
     def main(self, args):
         atoms = read(args.structure[0])
+        self.read_params()
         sim = Simulations[args.calculation[0]](
                 atoms, 
                 args.model, 
                 file_out=args.output,
                 path=args.path,
+                **self.params
                 )
 
         sim.run()
+
+    def read_params(self):
+        try:
+            with open("params.json") as file:
+                params = json.loads(file.read())
+        except FileNotFoundError:
+            params = {}
+        self.params = params
