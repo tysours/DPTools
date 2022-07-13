@@ -5,7 +5,7 @@ import argparse
 command2module = {
     "input": "dptools.input",
     "parity": "dptools.parity",
-    "run": "dptools.lmp.run",
+    "run": "dptools.lmp.simulations",
     #"sample": "dptools.sample",
     "convert": "dptools.utils",
 }
