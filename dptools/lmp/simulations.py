@@ -1,4 +1,5 @@
 from dptools.lmp.calculator import DeepMD
+from dptools.utils import get_dpfaults
 from ase.io import read
 from dptools.cli import BaseCLI
 import os
@@ -26,17 +27,20 @@ class Simulation:
 
 
 class SPE(Simulation):
-    def get_commands(self):
+    @staticmethod
+    def get_commands():
         commands = ["run 0"]
         return commands
 
 class Opt(Simulation):
-    def get_commands(self, nsw=1000, ftol=1e-3, etol=0.0):
+    @staticmethod
+    def get_commands(nsw=1000, ftol=1e-3, etol=0.0):
         commands = [f"minimize {etol} {ftol} {nsw} {nsw * 10}"]
         return commands
 
 class CellOpt(Simulation):
-    def get_commands(self, nsw=1000, ftol=1e-3, etol=0.0, opt_type="aniso", P=0.0):
+    @staticmethod
+    def get_commands(nsw=1000, ftol=1e-3, etol=0.0, opt_type="aniso", P=0.0):
         commands = [
                 f"fix cellopt all box/relax {opt_type} {P}",
                 f"minimize {etol} {ftol} {nsw} {nsw * 10}",
@@ -45,11 +49,13 @@ class CellOpt(Simulation):
         return commands
 
 class NVT(Simulation):
-    def get_commands(self):
+    @staticmethod
+    def get_commands():
         pass
 
 class NPT(Simulation):
-    def get_commands(self):
+    @staticmethod
+    def get_commands():
         pass
 
 Simulations = {"spe": SPE, "opt": Opt, "cellopt": CellOpt, "nvt-md": NVT, "npt-md": NPT}
@@ -67,12 +73,15 @@ class CLI(BaseCLI):
             nargs=1,
             help="File containing structure to run calculation on (.traj, .xyz, .cif, etc.)"
         )
-        self.parser.add_argument("-m", "--model", nargs=1, type=str, default="./graph.pb",
+        graph_default, map_default = get_dpfaults()
+        self.parser.add_argument("-m", "--model", nargs=1, type=str, default=graph_default,
                 help="Specify path of frozen .pb deepmd model to use")
         self.parser.add_argument("-p", "--path", nargs=1, type=str, default="./",
                 help="Specify path to write simulation files and results to")
         self.parser.add_argument("-o", "--output", nargs=1, type=str, default="atoms.traj",
                 help="Name of file to write calculation output to")
+        self.parser.add_argument("-g", "--generate-input", nargs=1, type=bool, default=False,
+                help="Only setup calculation and generate input files but do not run calculation")
 
     def main(self, args):
         atoms = read(args.structure[0])
@@ -85,7 +94,8 @@ class CLI(BaseCLI):
                 **self.params
                 )
 
-        sim.run()
+        if not self.generate_input:
+            sim.run()
 
     def read_params(self):
         try:
