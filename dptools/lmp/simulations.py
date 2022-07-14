@@ -6,18 +6,20 @@ import os
 import json
 
 class Simulation:
-    def __init__(self, atoms, graph, file_out="atoms.traj", path="./", **kwargs):
+    def __init__(self, atoms, graph, type_map=None, file_out="atoms.traj", path="./", **kwargs):
         self.atoms = atoms
         self.graph = graph
+        if not type_map:
+            from dptools.utils import graph2typemap
+            type_map = graph2typemap(self.graph)
+        self.type_map = type_map
         self.file_out = file_out
         self.path = path
         #self.params = kwargs
         self.commands = self.get_commands(**kwargs)
 
     def run(self):
-        from dptools.utils import graph2typemap
-        type_map = graph2typemap(self.graph)
-        calc = DeepMD(self.graph, type_map=type_map, run_command=self.commands) 
+        calc = DeepMD(self.graph, type_map=self.type_map, run_command=self.commands)
         self.atoms.calc = calc
         self.atoms.get_potential_energy()
         self.write_output()
@@ -94,8 +96,10 @@ class CLI(BaseCLI):
                 **self.params
                 )
 
-        if not self.generate_input:
+        if not args.generate_input:
             sim.run()
+        else:
+            raise NotImplementedError("Input generation only work in progress, harass me if you need it")
 
     def read_params(self):
         try:
