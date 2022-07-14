@@ -2,6 +2,7 @@ import numpy as np
 from ase import Atoms
 from ase.io import write, read
 from ase.io.formats import string2index
+import os
 
 from dptools.cli import BaseCLI
 
@@ -78,6 +79,14 @@ def graph2typemap(graph):
     dp = DeepPotential(graph)
     type_map = {sym: i for i, sym in enumerate(dp.get_type_map())}
     return type_map
+
+def get_dpfaults():
+    """ like defaults but for dp (haha... ha..) """
+    graph = os.environ.get("DPTOOLS_MODEL", "./graph.pb")
+    type_map = os.environ.get("DPTOOLS_TYPE_MAP", None)
+    if not type_map:
+        type_map = graph2typemap(graph)
+    return graph, type_map
 
 class Converter:
     def __init__(self, inputs, output, indices=":"):
