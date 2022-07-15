@@ -1,5 +1,5 @@
 from dptools.lmp.calculator import DeepMD
-from dptools.utils import get_dpfaults
+from dptools.utils import get_dpfaults, read_type_map
 from ase.io import read
 from dptools.cli import BaseCLI
 import os
@@ -78,6 +78,8 @@ class CLI(BaseCLI):
         graph_default, map_default = get_dpfaults()
         self.parser.add_argument("-m", "--model", nargs=1, type=str, default=graph_default,
                 help="Specify path of frozen .pb deepmd model to use")
+        self.parser.add_argument("-t", "--type-map", nargs=1, type=str, default=map_default,
+                help="Specify path of type_map.json to use")
         self.parser.add_argument("-p", "--path", nargs=1, type=str, default="./",
                 help="Specify path to write simulation files and results to")
         self.parser.add_argument("-o", "--output", nargs=1, type=str, default="atoms.traj",
@@ -91,6 +93,7 @@ class CLI(BaseCLI):
         sim = Simulations[args.calculation[0]](
                 atoms, 
                 args.model, 
+                type_map=read_type_map(args.type_map),
                 file_out=args.output,
                 path=args.path,
                 **self.params
