@@ -86,7 +86,7 @@ def get_dpfaults():
     """ like defaults but for dp (haha... ha..) """
     graph = os.environ.get("DPTOOLS_MODEL", "./graph.pb")
     type_map = os.environ.get("DPTOOLS_TYPE_MAP", None)
-    if not type_map:
+    if not type_map and os.path.exists(graph):
         type_map = graph2typemap(graph)
     return graph, type_map
 
