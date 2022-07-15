@@ -2,6 +2,7 @@ import numpy as np
 from ase import Atoms
 from ase.io import write, read
 from ase.io.formats import string2index
+from ase.data import chemical_symbols
 import os
 
 from dptools.cli import BaseCLI
@@ -88,6 +89,22 @@ def get_dpfaults():
         type_map = graph2typemap(graph)
     return graph, type_map
 
+def read_type_map(type_map_json):
+    with open(type_map_json) as file:
+        type_map = json.loads(file.read())
+
+    invert = False
+    # I'm inconsistent with key-value/value-key when writing type_map.json
+    # so check if need to invert dict such that chem symbols are keys
+    # TODO: fix inconsistencies
+    for k, v in type_map.items():
+        if k not in chemical_symbols:
+            invert = True
+        break
+    if invert:
+        type_map = {v: k for k, v in type_map.items()}
+    return type_map
+
 class Converter:
     def __init__(self, inputs, output, indices=":"):
         self.inputs = inputs
@@ -114,7 +131,6 @@ class Converter:
         if len(np.unique(self.types["inputs"])) > 1:
             raise ValueError(
                  f"multiple input types detected:\t{self.types['inputs']}\n"
-                  "WTF DO I DO?"
             )
 
     def set_reader(self):
