@@ -4,6 +4,7 @@ from ase.io import write, read
 from ase.io.formats import string2index
 from ase.data import chemical_symbols
 import os
+import json
 
 from dptools.cli import BaseCLI
 
