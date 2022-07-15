@@ -60,7 +60,6 @@ class DeepInput:
             system_name = self.db_name.split('/')[-1].split('.db')[0]
         else:
             system_name = self.system_name
-
         data_path = os.path.join(self.path, system_name)
         sets = ["train", "validation", "test"]
         self.paths = {s: os.path.join(data_path, s, "set.000") for s in sets}
@@ -211,4 +210,5 @@ class CLI(BaseCLI):
         elif args.n:
             raise NotImplementedError("n needs to be reworked, sorry (harass me if you need it)")
         sys_names = [db.split("/")[-1].split(".db")[0] for db in args.dbs]
-        thing = DeepInputs(args.dbs, system_names=sys_names, path=args.path[0])
+        print(args.path)
+        thing = DeepInputs(args.dbs, system_names=sys_names, path=args.path)
