@@ -8,6 +8,9 @@ command2module = {
     "run": "dptools.lmp.simulations",
     #"sample": "dptools.sample",
     "convert": "dptools.utils",
+    #"set": "dptools.?", set .env: graph, typemap
+    #"get": "dptools.?", get params, ?
+    #"info": "dptools.?", show env stuff
 }
 
 class BaseCLI:
