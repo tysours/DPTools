@@ -8,12 +8,13 @@ command2module = {
     "run": "dptools.lmp.simulations",
     #"sample": "dptools.sample",
     "convert": "dptools.utils",
-    #"set": "dptools.?", set .env: graph, typemap
+    "set": "dptools.env",
     #"get": "dptools.?", get params, ?
     #"info": "dptools.?", show env stuff
 }
 
 class BaseCLI:
+    help_info = ""
     def __init__(self, parser):
         self.parser = parser
 
