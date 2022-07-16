@@ -93,17 +93,29 @@ def get_dpfaults():
 def read_type_map(type_map_json):
     with open(type_map_json) as file:
         type_map = json.loads(file.read())
+    return check_type_map(type_map)
 
-    invert = False
+def check_type_map(type_map_dict):
     # I'm inconsistent with key-value/value-key when writing type_map.json
     # so check if need to invert dict such that chem symbols are keys
     # TODO: fix inconsistencies
-    for k, v in type_map.items():
+    invert = False
+    for k, v in type_map_dict.items():
         if k not in chemical_symbols:
             invert = True
         break
     if invert:
-        type_map = {v: k for k, v in type_map.items()}
+        type_map_dict = {v: k for k, v in type_map_dict.items()}
+    return type_map_dict
+
+def typemap2str(type_map_dict):
+    type_map = check_type_map(type_map_dict)
+    tm_str = ",".join([f"{k}:{v}" for k, v in type_map.items()])
+    return tm_str
+
+def str2typemap(tm_str):
+    items = tm_str.split(",")
+    type_map = {i.split(":")[0]: int(i.split(":")[-1]) for i in items}
     return type_map
 
 class Converter:
