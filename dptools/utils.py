@@ -91,12 +91,20 @@ def get_dpfaults():
     return graph, type_map
 
 def read_type_map(type_map_json):
-    with open(type_map_json) as file:
-        type_map = json.loads(file.read())
+    if isinstance(type_map_json, dict):
+        type_map = type_map_json
+    elif isinstance(type_map_json, str):
+        if type_map_json.endswith(".json"):
+            with open(type_map_json) as file:
+                type_map = json.loads(file.read())
+        else:
+            type_map = str2typemap(type_map_json)
+    else:
+        raise TypeError(f"Unknown type_map format provided: {type_map_json}")
     return check_type_map(type_map)
 
 def check_type_map(type_map_dict):
-    # I'm inconsistent with key-value/value-key when writing type_map.json
+    # I'm inconsistent with key-value/value-key when writing type_map
     # so check if need to invert dict such that chem symbols are keys
     # TODO: fix inconsistencies
     invert = False
