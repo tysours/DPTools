@@ -1,7 +1,7 @@
 import os
 import dotenv
 from dptools.cli import BaseCLI
-from dptools.utils import graph2typemap, typemap2str, str2typemap, read_type_map
+from dptools.utils import typemap2str, str2typemap, read_type_map
 
 def set_env(graph, type_map):
     if isinstance(type_map, dict):
@@ -12,6 +12,13 @@ def set_env(graph, type_map):
     dotenv.set_key(env_file, "DPTOOLS_MODEL", graph)
     dotenv.set_key(env_file, "DPTOOLS_TYPE_MAP", type_map)
     return
+
+def get_dpfaults():
+    """ like defaults but for dp (haha... ha..) """
+    defaults = dotenv.dotenv_values(env_file)
+    graph = defaults.get("DPTOOLS_MODEL", "./graph.pb")
+    type_map = defaults.get("DPTOOLS_TYPE_MAP", None)
+    return graph, type_map
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 env_file = os.path.join(basedir, ".env")

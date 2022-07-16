@@ -82,14 +82,6 @@ def graph2typemap(graph):
     type_map = {sym: i for i, sym in enumerate(dp.get_type_map())}
     return type_map
 
-def get_dpfaults():
-    """ like defaults but for dp (haha... ha..) """
-    graph = os.environ.get("DPTOOLS_MODEL", "./graph.pb")
-    type_map = os.environ.get("DPTOOLS_TYPE_MAP", None)
-    if not type_map and os.path.exists(graph):
-        type_map = graph2typemap(graph)
-    return graph, type_map
-
 def read_type_map(type_map_json):
     if isinstance(type_map_json, dict):
         type_map = type_map_json
