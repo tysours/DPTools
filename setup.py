@@ -1,9 +1,12 @@
 from dptools import __version__
 from setuptools import setup, find_packages
 
+version = __version__
+
 install_requires = [
     'ase',
     'scikit-learn', # only needed for shuffle util, maybe write own function to avoid dependency
+    'python-dotenv',
 ]
 
 
@@ -14,9 +17,9 @@ package_data = {} # maybe useful someday
 
 packages = ['dptools', 'dptools.lmp']
 
-setup(name='dptools',
-      version=f"{__version__}.test",
-      description='CLI toolkit for working with deepmd-kit',
+setup(name='dpmdtools',
+      version=version,
+      description='DPTools: CLI toolkit for working with deepmd-kit',
       url='https://github.com/tysours/DPTools',
       maintainer='Ty Sours',
       maintainer_email='tsours@ucdavis.edu',
