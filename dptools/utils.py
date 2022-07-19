@@ -119,7 +119,7 @@ def str2typemap(tm_str):
     return type_map
 
 def randomize_seed(in_json):
-    if istinstance(in_json, str):
+    if isinstance(in_json, str):
         with open(in_json) as file:
             in_json = json.loads(file.read())
     elif not isinstance(in_json, dict):
