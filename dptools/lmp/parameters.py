@@ -39,8 +39,9 @@ class CLI(BaseCLI):
             "calculation",
             nargs=1,
             type=str,
-            help="Calculation type to generate params.yaml file (spe, opt, cellopt, nvt-md, npt-md)."\
-                    "\nCan also specify label of saved calculations (e.g. nvt-md.label)"
+            help="Calculation type to generate params.yaml file "\
+                "(spe, opt, cellopt, nvt-md, npt-md)."\
+                "\nCan also specify label of saved calculations (e.g. nvt-md.label)"
         )
 
     def main(self, args):
