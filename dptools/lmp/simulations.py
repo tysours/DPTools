@@ -40,9 +40,9 @@ class Opt(Simulation):
 
 class CellOpt(Simulation):
     @staticmethod
-    def get_commands(nsw=1000, ftol=1e-3, etol=0.0, opt_type="aniso", P=0.0):
+    def get_commands(nsw=1000, ftol=1e-3, etol=0.0, opt_type="aniso", Ptarget=0.0):
         commands = [
-                f"fix cellopt all box/relax {opt_type} {P}",
+                f"fix cellopt all box/relax {opt_type} {Ptarget}",
                 f"minimize {etol} {ftol} {nsw} {nsw * 10}",
                  "unfix cellopt",
                 ]
