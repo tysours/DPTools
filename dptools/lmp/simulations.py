@@ -1,10 +1,12 @@
+from ruamel.yaml import YAML
+from ase.io import read
+import os
+
 from dptools.lmp.calculator import DeepMD
+from dptools.lmp.parameters import get_parameter_sets
 from dptools.utils import read_type_map
 from dptools.env import get_dpfaults
-from ase.io import read
 from dptools.cli import BaseCLI
-import os
-import json
 
 class Simulation:
     def __init__(self, atoms, graph, type_map, file_out="atoms.traj", path="./", **kwargs):
@@ -66,7 +68,7 @@ class CLI(BaseCLI):
             "calculation",
             nargs=1,
             type=str,
-            help="Type of calculation to run (spe, opt, cellopt, nvt-md, npt-md)"
+            help="Type of calculation to run (spe, opt, cellopt, nvt-md, npt-md, or params.yaml)"
         )
         self.parser.add_argument(
             "structure",
@@ -87,8 +89,8 @@ class CLI(BaseCLI):
 
     def main(self, args):
         atoms = read(args.structure[0])
-        self.read_params()
-        sim = Simulations[args.calculation[0]](
+        self.read_params(args.calculation[0])
+        sim = Simulations[self.calc_type](
                 atoms, 
                 args.model, 
                 type_map=read_type_map(args.type_map),
@@ -102,10 +104,12 @@ class CLI(BaseCLI):
         else:
             raise NotImplementedError("Input generation only work in progress, harass me if you need it")
 
-    def read_params(self):
-        try:
-            with open("params.json") as file:
-                params = json.loads(file.read())
-        except FileNotFoundError:
-            params = {}
+    def read_params(self, calc_arg):
+        if calc_arg.endswith(".yaml"):
+            with open(calc_arg) as file:
+                params = YAML().load(file.read())
+        else:
+            param_sets = get_parameter_sets()
+            params = param_sets[calc_arg]
+        self.calc_type = params.pop("type").split(".")[0]
         self.params = params
