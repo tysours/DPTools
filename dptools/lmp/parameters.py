@@ -1,7 +1,8 @@
 from ruamel.yaml import YAML
-import ruamel.yaml
 import json
 import sys
+
+from dptools.cli import BaseCLI
 
 def write_yaml(param_dict, file):
     lengths = [len(k) + len(str(v)) for k, v in param_dict.items()]
@@ -14,43 +15,21 @@ def write_yaml(param_dict, file):
                 )
     YAML().dump(param_dict, file)
     return
+
+def get_parameter_sets():
+    basedir = os.path.abspath(os.path.dirname(__file__))
+    param_file = os.path.join(basedir, "parameter_sets.yaml")
+    with open(param_file) as file:
+        parameter_sets = YAML().load(file.read())
+    return parameter_sets
         
 descriptions = {
         "type": "Type of calculation (spe, opt, cellopt, nvt-md, npt-md)",
         "nsw": "Max number of iterations",
         "ftol": "Force convergence tolerance for lammps optimize",
-        "celltype": "Thing guy man bro",
-        "Ti": "(K) Initial temperature at start of simulation",
-        "Tf": "(K) Final temperature of simulation (ramped form Ti to Tf)"
+        "etol": "Energy convergence tolerance for lammps optimize",
+        "opt_type": "(iso, aniso, tri) see https://docs.lammps.org/fix_box_relax.html",
+        "Ptarget": "Desired pressure (eV/Å)",
+        "Ti": "Initial temperature (K) at start of simulation",
+        "Tf": "Final temperature (K) of simulation (ramped form Ti to Tf)"
     }
-
-#with open('test.json') as file:
-with open('test.yaml') as file:
-    #test = round_trip_load(file.read())
-    test = YAML().load(file.read())
-
-with open("params.yaml", "w") as file:
-    write_yaml(test["cellopt"], file)
-
-test = ruamel.yaml.round_trip_load(ruamel.yaml.round_trip_dump(test["cellopt"]))
-for k in test:
-    print(descriptions[k])
-    test.yaml_add_eol_comment(
-            descriptions[k],
-            key=k,
-            column=20
-            )
-YAML().dump(test, sys.stdout)
-'''
-test.yaml_set_comment_before_after_key(key='type', before=descriptions['type'])
-with open('wat.yaml', 'w') as file:
-#    ruamel.yaml.round_trip_dump(test, file)#sys.stdout)
-    ruamel.yaml.YAML().dump(test, file)
-'''
-'''
-a = {'nsw': 100, 'Ti': 298, 'Tf': 1999}
-
-with open('test.yaml', 'w') as file:
-    ruamel.yaml.safe_dump(a, file, default_flow_style=False, 
-            sort_keys=False, allow_unicode=True)
-'''
