@@ -9,7 +9,7 @@ command2module = {
     #"sample": "dptools.sample",
     "convert": "dptools.utils",
     "set": "dptools.env",
-    #"get": "dptools.?", get params, ?
+    "get": "dptools.lmp.parameters",
     #"info": "dptools.?", show env stuff
 }
 
