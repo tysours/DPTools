@@ -1,0 +1,14 @@
+spe:
+  type: spe
+opt:
+  type: opt
+  nsw: 500
+  ftol: 0.001
+  etol: 0.0
+cellopt:
+  type: cellopt
+  nsw: 500
+  ftol: 0.001
+  etol: 0.0
+  opt_type: aniso
+  Ptarget: 0.0
