@@ -10,6 +10,7 @@ import json
 import requests
 
 from dptools.cli import BaseCLI
+from dptools.utils import randomize_seed
 
 class DeepInput:
     def __init__(self, db_name, atoms=None, system_name=None, type_map=None, n=None, path="./data"):
@@ -205,10 +206,24 @@ class CLI(BaseCLI):
                 help="Specify path to dataset directory")
 
     def main(self, args):
-        if args.ensemble:
-            raise NotImplementedError("ensemble work in progress, sorry (harass me if you need it)")
-        elif args.n:
+        if args.n:
             raise NotImplementedError("n needs to be reworked, sorry (harass me if you need it)")
         sys_names = [db.split("/")[-1].split(".db")[0] for db in args.dbs]
-        print(args.path)
         thing = DeepInputs(args.dbs, system_names=sys_names, path=args.path)
+        if args.ensemble:
+            self.make_ensemble()
+
+    def make_ensemble(self):
+        with open("in.json") as file:
+            in_json = json.loads(file.read())
+        in_jsons = [randomize_seed(in_json) for _ in range(4)]
+        dirs = ["00", "01", "02", "03"]
+        for jsn, d in zip(in_jsons, dirs):
+            self.write_json(jsn, d)
+
+    @staticmethod
+    def write_json(src, dest):
+        os.makedirs(dest, exist_ok=True)
+        file_path = os.path.join(dest, "in.json")
+        with open(file_path, "w") as file:
+            file.write(json.dumps(src, indent=4))

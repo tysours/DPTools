@@ -118,6 +118,17 @@ def str2typemap(tm_str):
     type_map = {i.split(":")[0]: int(i.split(":")[-1]) for i in items}
     return type_map
 
+def randomize_seed(in_json):
+    if isinstance(in_json, str):
+        with open(in_json) as file:
+            in_json = json.loads(file.read())
+    elif not isinstance(in_json, dict):
+        raise TypeError("Need dict or .json file to randomize seeds")
+    in_json["model"]["descriptor"]["seed"] = np.random.randint(999999)
+    in_json["model"]["fitting_net"]["seed"] = np.random.randint(999999)
+    in_json["training"]["seed"] = np.random.randint(999999)
+    return in_json
+
 class Converter:
     def __init__(self, inputs, output, indices=":"):
         self.inputs = inputs
