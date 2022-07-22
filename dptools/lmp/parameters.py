@@ -3,17 +3,15 @@ import os
 
 from dptools.cli import BaseCLI
 
+
 def write_yaml(param_dict, file):
     lengths = [len(k) + len(str(v)) for k, v in param_dict.items()]
-    column = max(lengths) + 4 # align parameter description comments
+    column = max(lengths) + 4  # align parameter description comments
     for param in param_dict:
-        param_dict.yaml_add_eol_comment(
-                descriptions[param],
-                key=param,
-                column=column
-                )
+        param_dict.yaml_add_eol_comment(descriptions[param], key=param, column=column)
     YAML().dump(param_dict, file)
     return
+
 
 def get_parameter_sets():
     basedir = os.path.abspath(os.path.dirname(__file__))
@@ -21,17 +19,19 @@ def get_parameter_sets():
     with open(param_file) as file:
         parameter_sets = YAML().load(file.read())
     return parameter_sets
-        
+
+
 descriptions = {
-        "type": "Type of calculation (spe, opt, cellopt, nvt-md, npt-md)",
-        "nsw": "Max number of iterations",
-        "ftol": "Force convergence tolerance for lammps optimize",
-        "etol": "Energy convergence tolerance for lammps optimize",
-        "opt_type": "(iso, aniso, tri) see https://docs.lammps.org/fix_box_relax.html",
-        "Ptarget": "Desired pressure (eV/Å)",
-        "Ti": "Initial temperature (K) at start of simulation",
-        "Tf": "Final temperature (K) of simulation (ramped form Ti to Tf)"
-    }
+    "type": "Type of calculation (spe, opt, cellopt, nvt-md, npt-md)",
+    "nsw": "Max number of iterations",
+    "ftol": "Force convergence tolerance for lammps optimize",
+    "etol": "Energy convergence tolerance for lammps optimize",
+    "opt_type": "(iso, aniso, tri) see https://docs.lammps.org/fix_box_relax.html",
+    "Ptarget": "Desired pressure (eV/Å)",
+    "Ti": "Initial temperature (K) at start of simulation",
+    "Tf": "Final temperature (K) of simulation (ramped form Ti to Tf)",
+}
+
 
 class CLI(BaseCLI):
     def add_args(self):
@@ -39,9 +39,9 @@ class CLI(BaseCLI):
             "calculation",
             nargs=1,
             type=str,
-            help="Calculation type to generate params.yaml file "\
-                "(spe, opt, cellopt, nvt-md, npt-md)."\
-                "\nCan also specify label of saved calculations (e.g. nvt-md.label)"
+            help="Calculation type to generate params.yaml file "
+            "(spe, opt, cellopt, nvt-md, npt-md)."
+            "\nCan also specify label of saved calculations (e.g. nvt-md.label)",
         )
 
     def main(self, args):
