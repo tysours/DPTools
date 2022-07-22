@@ -7,6 +7,7 @@ install_requires = [
     'ase',
     'scikit-learn', # only needed for shuffle util, maybe write own function to avoid dependency
     'python-dotenv',
+    'ruamel.yaml'
 ]
 
 
