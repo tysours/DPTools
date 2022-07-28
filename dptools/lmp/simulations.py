@@ -37,14 +37,18 @@ class SPE(Simulation):
 
 class Opt(Simulation):
     @staticmethod
-    def get_commands(nsw=1000, ftol=1e-3, etol=0.0):
-        commands = [f"minimize {etol} {ftol} {nsw} {nsw * 10}"]
+    def get_commands(nsw=1000, ftol=1e-3, etol=0.0, disp_freq=10):
+        commands = [
+            f"thermo {disp_freq}",
+            f"minimize {etol} {ftol} {nsw} {nsw * 10}"]
+            ]
         return commands
 
 class CellOpt(Simulation):
     @staticmethod
-    def get_commands(nsw=1000, ftol=1e-3, etol=0.0, opt_type="aniso", Ptarget=0.0):
+    def get_commands(nsw=1000, ftol=1e-3, etol=0.0, opt_type="aniso", Ptarget=0.0, disp_freq=10):
         commands = [
+                f"thermo {disp_freq}",
                 f"fix cellopt all box/relax {opt_type} {Ptarget}",
                 f"minimize {etol} {ftol} {nsw} {nsw * 10}",
                  "unfix cellopt",
@@ -54,11 +58,12 @@ class CellOpt(Simulation):
 class NVT(Simulation):
     @staticmethod
     def get_commands(steps=1000, timestep=0.5, Ti=298.0, Tf=298.0, equil_steps=1000, write_freq=100, disp_freq=100, pre_opt=True):
-        commands = [f"thermo {disp_freq}"]
-        timestep = timestep * 1e-3 # convert to ps for lammps
+        commands = []
         if pre_opt:
             commands += Opt.get_commands(nsw=200)
+        timestep = timestep * 1e-3 # convert to ps for lammps
         commands += [
+            f"thermo {disp_freq}",
             f"variable\tdt\tequal\t0.5e-3",
             "variable\ttdamp\tequal 100*${dt}",
             "run_style verlet",
