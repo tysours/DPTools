@@ -40,7 +40,7 @@ class Opt(Simulation):
     def get_commands(nsw=1000, ftol=1e-3, etol=0.0, disp_freq=10):
         commands = [
             f"thermo {disp_freq}",
-            f"minimize {etol} {ftol} {nsw} {nsw * 10}"]
+            f"minimize {etol} {ftol} {nsw} {nsw * 10}",
             ]
         return commands
 
