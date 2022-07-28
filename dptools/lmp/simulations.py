@@ -59,7 +59,7 @@ class NVT(Simulation):
         if pre_opt:
             commands += Opt.get_commands(nsw=200)
         commands += [
-            f"variable\tdtequal\t0.5e-3",
+            f"variable\tdt\tequal\t0.5e-3",
             "variable\ttdamp\tequal 100*${dt}",
             "run_style verlet",
             "timestep ${dt}",
