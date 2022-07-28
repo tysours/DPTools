@@ -13,7 +13,8 @@ cellopt:
   opt_type: aniso
   Ptarget: 0.0
 nvt-md:
-  steps: 1000
+  type: nvt-md
+  steps: 10000
   timestep: 0.5
   Ti: 298.0
   Tf: 298.0
