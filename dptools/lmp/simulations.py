@@ -5,6 +5,7 @@ import os
 from dptools.lmp.calculator import DeepMD
 from dptools.lmp.parameters import get_parameter_sets
 from dptools.utils import read_type_map
+from dptools.utils import get_seed as seed
 from dptools.env import get_dpfaults
 from dptools.cli import BaseCLI
 
@@ -52,8 +53,23 @@ class CellOpt(Simulation):
 
 class NVT(Simulation):
     @staticmethod
-    def get_commands():
-        pass
+    def get_commands(steps=1000, timestep=0.5, Ti=298.0, Tf=298.0, equil_steps=1000, write_freq=100, disp_freq=100, pre_opt=True):
+        commands = [f"thermo {disp_freq}"]
+        timestep = timestep * 1e-3 # convert to ps for lammps
+        if pre_opt:
+            commands += Opt.get_commands(nsw=200)
+        commands += [
+            f"variable\tdtequal\t0.5e-3",
+            "variable\ttdamp\tequal 100*${dt}",
+            "run_style verlet",
+            "timestep ${dt}",
+            # XXX: Add customizable velocity keywords as args?
+            f"velocity all create {Ti} {seed()} rot yes mom yes dist gaussian",
+            f"fix 2 all nvt temp {Ti} {Tf} ${{tdamp}}",
+            f"run {equil_steps}",
+            f"dump 1 all custom {write_freq} nvt.dump id type x y z",
+            f"run {steps}"
+            ]
 
 class NPT(Simulation):
     @staticmethod
