@@ -23,13 +23,19 @@ def get_parameter_sets():
 
 descriptions = {
     "type": "Type of calculation (spe, opt, cellopt, nvt-md, npt-md)",
+    "disp_freq": "Print lammps output every {disp_freq} steps (thermo disp_freq)",
     "nsw": "Max number of iterations",
     "ftol": "Force convergence tolerance for lammps optimize",
     "etol": "Energy convergence tolerance for lammps optimize",
     "opt_type": "(iso, aniso, tri) see https://docs.lammps.org/fix_box_relax.html",
-    "Ptarget": "Desired pressure (eV/Å)",
-    "Ti": "Initial temperature (K) at start of simulation",
-    "Tf": "Final temperature (K) of simulation (ramped form Ti to Tf)",
+    "Ptarget": "Desired pressure [eV/Å]",
+    "steps": "Total number of timesteps to run simulation",
+    "timestep": "[fs]",
+    "equil_steps": "Number of timesteps to run initial equilibration at Ti",
+    "Ti": "Initial temperature [K] at start of simulation",
+    "Tf": "Final temperature [K] of simulation (ramped form Ti to Tf)",
+    "pre_opt": "Optimize structure (and cell for npt-md) before starting MD run",
+    "write_freq": "Write MD image every {write_freq} steps",
 }
 
 
