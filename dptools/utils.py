@@ -8,10 +8,11 @@ import json
 
 from dptools.cli import BaseCLI
 
-# TODO: figure out what to do about type_map
-type_map = {"1": "O", "2": "Si", "3": "H"}
-# type_map = {'1': 'C', '2': 'H', '3': 'H', '4': 'O', '5': 'O', '6': 'H', '7': 'Cu'}
-def read_dump(dump, index=":"):
+def read_dump(dump, type_map, index=":"):
+    type_map = read_type_map(type_map) # support str, json, dict inputs
+    if 0 in type_map.values(): # lammps indexing starts at 1
+        type_map = {k: v + 1 for k, v in type_map.items()}
+    type_map = {v: k for k, v in type_map.items()} # invert to find symbol from type index
     with open(dump) as file:
         lines = file.readlines()
     traj = []
@@ -28,7 +29,7 @@ def read_dump(dump, index=":"):
             types = np.array(
                 [int(l.split()[-4]) for l in lines[i + 1 : i + 1 + n_atoms]]
             )
-            symbols = np.array([type_map[str(t)] for t in types])
+            symbols = np.array([type_map[t] for t in types])
             positions = np.array(
                 [str_to_float(lines[i + j + 1]) for j in range(n_atoms)]
             )
