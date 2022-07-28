@@ -4,7 +4,7 @@ import os
 
 from dptools.lmp.calculator import DeepMD
 from dptools.lmp.parameters import get_parameter_sets
-from dptools.utils import read_type_map
+from dptools.utils import read_type_map, read_dump
 from dptools.utils import get_seed as seed
 from dptools.env import get_dpfaults
 from dptools.cli import BaseCLI
@@ -77,6 +77,11 @@ class NVT(Simulation):
             ]
         return commands
 
+    def process(self):
+        atoms = read_dump("nvt.dump", self.type_map)
+        atoms.write(self.file_out)
+
+
 class NPT(Simulation):
     @staticmethod
     def get_commands():
@@ -104,7 +109,7 @@ class CLI(BaseCLI):
                 help="Specify path of type_map.json to use")
         self.parser.add_argument("-p", "--path", nargs=1, type=str, default="./",
                 help="Specify path to write simulation files and results to")
-        self.parser.add_argument("-o", "--output", nargs=1, type=str, default="atoms.traj",
+        self.parser.add_argument("-o", "--output", nargs=1, type=str, default="{calculation}.traj",
                 help="Name of file to write calculation output to")
         self.parser.add_argument("-g", "--generate-input", nargs=1, type=bool, default=False,
                 help="Only setup calculation and generate input files but do not run calculation")
@@ -112,6 +117,8 @@ class CLI(BaseCLI):
     def main(self, args):
         atoms = read(args.structure[0])
         self.read_params(args.calculation[0])
+        if args.output == "{calculation}.traj":
+            args.output = f"{self.calc_type}.traj"
         sim = Simulations[self.calc_type](
                 atoms, 
                 args.model, 
