@@ -70,6 +70,7 @@ class NVT(Simulation):
             f"dump 1 all custom {write_freq} nvt.dump id type x y z",
             f"run {steps}"
             ]
+        return commands
 
 class NPT(Simulation):
     @staticmethod
