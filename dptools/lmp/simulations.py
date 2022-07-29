@@ -1,5 +1,5 @@
 from ruamel.yaml import YAML
-from ase.io import read
+from ase.io import read, write
 import os
 
 from dptools.lmp.calculator import DeepMD
@@ -79,7 +79,7 @@ class NVT(Simulation):
 
     def process(self):
         atoms = read_dump("nvt.dump", self.type_map)
-        atoms.write(self.file_out)
+        write(self.file_out, atoms)
 
 
 class NPT(Simulation):
