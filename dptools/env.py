@@ -10,14 +10,6 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 default_env_file = os.path.join(basedir, ".env")
 env_file = default_env_file
 
-# TODO: Thnk of a better solution to accessing custom envs
-#  Currently requires importing dptools.env after setting os.environ in module,
-#  seems too easy to screw up and load the wrong env without realizing it to me
-label = os.environ.get("DPTOOLS_ENV") 
-print('label:', label)
-if label:
-    env_file += "." + label
-print(env_file)
 
 def set_env(key, value):
     dotenv.set_key(env_file, key, value)
@@ -26,6 +18,11 @@ def set_env(key, value):
 def get_env():
     values = dotenv.dotenv_values(env_file)
     return values
+
+
+def set_custom_env(label):
+    global env_file
+    env_file = default_env_file + "." + label
 
 
 def get_dpfaults(key="model"):
@@ -47,7 +44,7 @@ def get_dpfaults(key="model"):
             host = socket.gethostname()
             try:
                 for k, v in hpc_defaults[host].items():
-                    set_env(k, str(v), env=env)
+                    set_env(k, str(v))
             except KeyError:
                 raise Exception("Host unrecognized and no default HPC parameters found."\
                     "\nUse 'dptools set script.sh' with desired #SBATCH comment in script.sh")
