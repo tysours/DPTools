@@ -6,7 +6,6 @@ from dptools.lmp.calculator import DeepMD
 from dptools.lmp.parameters import get_parameter_sets
 from dptools.utils import read_type_map, read_dump
 from dptools.utils import get_seed as seed
-from dptools.env import get_dpfaults
 from dptools.cli import BaseCLI
 
 class Simulation:
@@ -102,11 +101,8 @@ class CLI(BaseCLI):
             nargs=1,
             help="File containing structure to run calculation on (.traj, .xyz, .cif, etc.)"
         )
-        graph_default, map_default = get_dpfaults()
-        self.parser.add_argument("-m", "--model", nargs=1, type=str, default=graph_default,
-                help="Specify path of frozen .pb deepmd model to use")
-        self.parser.add_argument("-t", "--type-map", nargs=1, type=str, default=map_default,
-                help="Specify path of type_map.json to use")
+        self.parser.add_argument("-m", "--model-label", nargs=1, type=str, default=None,
+                help="Label of specific model to use (see dptools set -h)")
         self.parser.add_argument("-p", "--path", nargs=1, type=str, default="./",
                 help="Specify path to write simulation files and results to")
         self.parser.add_argument("-o", "--output", nargs=1, type=str, default="{calculation}.traj",
@@ -116,22 +112,25 @@ class CLI(BaseCLI):
 
     def main(self, args):
         atoms = read(args.structure[0])
+        self.set_model(args.model_label)
         self.read_params(args.calculation[0])
-        if args.output == "{calculation}.traj":
-            args.output = f"{self.calc_type}.traj"
+        if args.output == "{calculation}.traj": # strip custom parameter set label if present
+            args.output = f"{self.calc_type}.traj" 
+
+
         sim = Simulations[self.calc_type](
                 atoms, 
-                args.model, 
-                type_map=read_type_map(args.type_map),
+                self.graph,
+                type_map=read_type_map(self.type_map), # is this function call necessary?
                 file_out=args.output,
                 path=args.path,
                 **self.params
                 )
 
-        if not args.generate_input:
-            sim.run()
-        else:
+        if args.generate_input:
             raise NotImplementedError("Input generation only work in progress, harass me if you need it")
+        else:
+            sim.run()
 
     def read_params(self, calc_arg):
         if calc_arg.endswith(".yaml"):
@@ -142,3 +141,9 @@ class CLI(BaseCLI):
             params = param_sets[calc_arg]
         self.calc_type = params.pop("type").split(".")[0]
         self.params = params
+    
+    def set_model(self, model_label):
+        # NOTE: NEED TO SET THE LABEL BEFORE IMPORTING get_dpfaults
+        os.environ["DPTOOLS_ENV"] = model_label 
+        from dptools.env import get_dpfaults
+        self.graph, self.type_map = get_dpfaults()
