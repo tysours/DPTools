@@ -36,7 +36,6 @@ class SlurmJob:
         self.commands = commands
         self.set_path_stuff(directories, file_name) # what's the term for this? setting directories + file_name + full path
         self.set_text(**kwargs)
-        self.set_header()
 
     def get_header(self):
         header = f"#!/usr/bin/env bash\n{self.sbatch}\n"
@@ -54,7 +53,7 @@ class SlurmJob:
 
         exports = ""
         for k, v in kwargs.items():
-            exports += "export {k}={v}\n"
+            exports += f"export {k}={v}\n"
 
         body = "\n"
         if isinstance(self.commands, list):
