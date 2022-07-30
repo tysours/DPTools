@@ -8,24 +8,30 @@ from dptools.hpc import hpc_defaults
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 default_env_file = os.path.join(basedir, ".env")
+env_file = default_env_file
 
+# TODO: Thnk of a better solution to accessing custom envs
+#  Currently requires importing dptools.env after setting os.environ in module,
+#  seems too easy to screw up and load the wrong env without realizing it to me
+label = os.environ.get("DPTOOLS_ENV") 
+print('label:', label)
+if label:
+    env_file += "." + label
+print(env_file)
 
-def set_env(key, value, env=None):
-    env_file = env if env else default_env_file
-
+def set_env(key, value):
     dotenv.set_key(env_file, key, value)
 
 
-def get_env(env=None):
-    env_file = env if env else default_env_file
-
+def get_env():
     values = dotenv.dotenv_values(env_file)
     return values
 
 
-def get_dpfaults(key="model", env=None):
+def get_dpfaults(key="model"):
     """ like defaults but for dp (haha... ha..) """
-    default_vals = get_env(env)
+    print(env_file)
+    default_vals = get_env()
 
     if key == "model":
         keys = ["DPTOOLS_MODEL", "DPTOOLS_TYPE_MAP"]
@@ -75,7 +81,7 @@ def set_params(params):
     raise NotImplementedError("Harass me for this if you need it")
 
 
-class CLI(BaseCLI):
+class CLI(BaseCLI): # XXX: Everything about this could surely be improved
     def add_args(self):
         help="Path to DP model, params.yaml, or {script}.sh to set as default.\n"\
              "Need .pb, .yaml, or .sh extension to set model, params, or sbatch, respectively."
@@ -86,12 +92,12 @@ class CLI(BaseCLI):
         )
 
     def main(self, args):
-        self.what_am_i(args.thing[0])
         self.set(args.thing[0])
 
-    def what_am_i(self, thing):
+    def set(self, thing):
         ext2function = {"pb": set_model, "sh": set_sbatch, "yaml": set_params}
         ext = thing.split(".")[-1]
         if ext not in ext2function:
             raise TypeError(f"Unrecognized file type for {thing}. Try 'dptools set -h'")
-        self.set = ext2function[ext]
+        self.set_thing = ext2function[ext]
+        self.set_thing(thing)
