@@ -1,8 +1,10 @@
 import os
 import socket
 import dotenv
+
 from dptools.cli import BaseCLI
 from dptools.utils import typemap2str, str2typemap, read_type_map, graph2typemap
+from dptools.hpc import hpc_defaults
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 default_env_file = os.path.join(basedir, ".env")
@@ -27,13 +29,15 @@ def get_dpfaults(key="model", env=None):
 
     if key == "model":
         keys = ["DPTOOLS_MODEL", "DPTOOLS_TYPE_MAP"]
+        defaults = tuple([default_vals.get(k) for k in keys])
+
     elif key == "sbatch":
         keys = ["SBATCH_COMMENT", 
                 "OMP_NUM_THREADS", 
                 "TF_INTRA_OP_PARALLELISM_THREADS", 
                 "TF_INTER_OP_PARALLELISM_THREADS"]
+
         if not default_vals.get(keys[0], None):
-            from dptools.hpc import hpc_defaults
             host = socket.gethostname()
             try:
                 for k, v in hpc_defaults[host].items():
@@ -50,8 +54,8 @@ def get_dpfaults(key="model", env=None):
             for k in keys:
                 print(k, "=", default_vals[k])
             print("-" * 64)
-            
-    defaults = tuple([default_vals.get(k) for k in keys])
+        # this section is not going as smoothly as I envisioned 
+        defaults = {k: default_vals[k] for k in keys}
     return defaults
 
 
