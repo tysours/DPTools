@@ -92,43 +92,45 @@ class CLI(BaseCLI):
     def add_args(self):
         self.parser.add_argument(
             "calculation",
-            nargs=1,
             type=str,
-            help="Type of calculation to run (spe, opt, cellopt, nvt-md, npt-md, or params.yaml)"
+            help="Type of calculation to run (spe, opt, cellopt, nvt-md, npt-md, or params.yaml)",
+            #choices=[k for k in Simulations.keys()] + ["path/to/params.yaml"], # messier than help comment IMO
         )
         self.parser.add_argument(
             "structure",
             nargs=1,
             help="File containing structure to run calculation on (.traj, .xyz, .cif, etc.)"
         )
-        self.parser.add_argument("-m", "--model-label", nargs=1, type=str, default=None,
+        self.parser.add_argument("-m", "--model-label", type=str, default=None,
                 help="Label of specific model to use (see dptools set -h)")
-        self.parser.add_argument("-p", "--path", nargs=1, type=str, default="./",
-                help="Specify path to write simulation files and results to")
-        self.parser.add_argument("-o", "--output", nargs=1, type=str, default="{calculation}.traj",
-                help="Name of file to write calculation output to")
-        self.parser.add_argument("-g", "--generate-input", nargs=1, type=bool, default=False,
+        self.parser.add_argument("-s", "--submit", action="store_true",
+                help="Automatically submit job(s) to train model(s) once input has been created")
+        self.parser.add_argument("-g", "--generate-input", action="store_true",
                 help="Only setup calculation and generate input files but do not run calculation")
+        #self.parser.add_argument("-p", "--path", nargs=1, type=str, default="./",
+        #        help="Specify path to write simulation files and results to")
+        self.parser.add_argument("-o", "--output", type=str, default="{calculation}.traj",
+                help="Name of file to write calculation output to")
 
     def main(self, args):
+        print(args)
         atoms = read(args.structure[0])
         self.set_model(args.model_label)
-        self.read_params(args.calculation[0])
+        self.read_params(args.calculation)
         if args.output == "{calculation}.traj": # strip custom parameter set label if present
             args.output = f"{self.calc_type}.traj" 
-
 
         sim = Simulations[self.calc_type](
                 atoms, 
                 self.graph,
-                type_map=read_type_map(self.type_map), # is this function call necessary?
+                type_map=read_type_map(self.type_map),
                 file_out=args.output,
                 path=args.path,
                 **self.params
                 )
 
         if args.generate_input:
-            raise NotImplementedError("Input generation only work in progress, harass me if you need it")
+            raise NotImplementedError("--generate-input work in progress, harass me if you need it")
         else:
             sim.run()
 
@@ -143,7 +145,9 @@ class CLI(BaseCLI):
         self.params = params
     
     def set_model(self, model_label):
-        # NOTE: NEED TO SET THE LABEL BEFORE IMPORTING get_dpfaults
-        os.environ["DPTOOLS_ENV"] = model_label 
-        from dptools.env import get_dpfaults
+        from dptools.env import get_dpfaults, set_custom_env
+        # NOTE: NEED TO SET THE LABEL BEFORE CALLING get_dpfaults
+        #  Also, I suppose it's not really get_dpfaults if it can load custom envs
+        if model_label:
+            set_custom_env(model_label)
         self.graph, self.type_map = get_dpfaults()
