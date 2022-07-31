@@ -109,8 +109,8 @@ class CLI(BaseCLI):
                 help="Automatically submit job(s) to train model(s) once input has been created")
         self.parser.add_argument("-g", "--generate-input", action="store_true",
                 help="Only setup calculation and generate input files but do not run calculation")
-        #self.parser.add_argument("-p", "--path", nargs=1, type=str, default="./",
-        #        help="Specify path to write simulation files and results to")
+        self.parser.add_argument("-p", "--path", nargs=1, type=str, default="./",
+                help="Specify path to write simulation files and results to")
         self.parser.add_argument("-o", "--output", type=str, default="{calculation}.traj",
                 help="Name of file to write calculation output to")
 
@@ -132,7 +132,7 @@ class CLI(BaseCLI):
                 )
 
         if args.submit:
-            self.submit_jobs()
+            self.submit_jobs(args.path)
         elif args.generate_input:
             raise NotImplementedError("--generate-input work in progress, harass me if you need it")
         else:
@@ -140,6 +140,7 @@ class CLI(BaseCLI):
 
     def set_params(self, calc_arg):
         if calc_arg.endswith(".yaml"):
+            calc_arg = os.path.abspath(calc_arg)
             with open(calc_arg) as file:
                 params = YAML().load(file.read())
         else:
@@ -156,14 +157,15 @@ class CLI(BaseCLI):
             set_custom_env(model_label)
         self.graph, self.type_map = get_dpfaults()
 
-    def submit_jobs(self):
+    def submit_jobs(self, directories):
+        from dptools.hpc import SlurmJob
         hpc_info = get_dpfaults(key="sbatch")
         sbatch_comment = hpc_info.pop("SBATCH_COMMENT")
 
         commands = f"dptools run {self.calc_arg} {self.structures[0]}"
         jobs = SlurmJob(sbatch_comment,
                         commands=commands,
-                        directories=self.dirs,
+                        directories=directories,
                         file_name="dptools.run.sh",
                         **hpc_info
                         )
