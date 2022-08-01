@@ -125,13 +125,19 @@ def randomize_seed(in_json):
             in_json = json.loads(file.read())
     elif not isinstance(in_json, dict):
         raise TypeError("Need dict or .json file to randomize seeds")
-    in_json["model"]["descriptor"]["seed"] = get_seed()
-    in_json["model"]["fitting_net"]["seed"] = get_seed()
-    in_json["training"]["seed"] = get_seed()
+    seeds = get_seed(n=3)
+    in_json["model"]["descriptor"]["seed"] = seeds[0]
+    in_json["model"]["fitting_net"]["seed"] = seeds[1]
+    in_json["training"]["seed"] = seeds[2]
     return in_json
 
-def get_seed(max_val=999999):
-    return np.random.randint(max_val)
+def get_seed(max_val=999999, n=1):
+    if n > 1:
+        seed = np.random.randint(max_val, size=n)
+        seed = [int(s) for s in seed] # dtype=int64 not json serializable
+    elif n == 1:
+        seed = np.random.randint(max_val) # avoids single item array
+    return seed
 
 class Converter:
     def __init__(self, inputs, output, indices=":"):

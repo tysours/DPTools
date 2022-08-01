@@ -224,9 +224,11 @@ class CLI(BaseCLI):
     def make_ensemble(self):
         with open("in.json") as file:
             in_json = json.loads(file.read())
-        in_jsons = [randomize_seed(in_json) for _ in range(4)]
+        #in_jsons = [randomize_seed(in_json) for _ in range(4)]
         self.dirs = ["00", "01", "02", "03"]
-        for jsn, d in zip(in_jsons, self.dirs):
+        for d in self.dirs:
+            jsn = randomize_seed(in_json)
+            print(jsn["model"]["descriptor"]["seed"])
             self.write_json(jsn, d)
 
     @staticmethod
