@@ -138,9 +138,8 @@ class DeepInputs(DeepInput):
         self.input_json = json.loads(r.content)
 
     def update_json(self):
+        self.set_systems()
         types = [self.type_map[i] for i in range(len(self.type_map))]
-        systems = glob.glob(f"{self.path}/*") # don't put other files here
-        systems.sort()
 
         # TODO: make this more customizable
         self.input_json["model"]["type_map"] = types
@@ -150,12 +149,19 @@ class DeepInputs(DeepInput):
         self.input_json["model"]["descriptor"]["rcut_smth"] = 5.5
         self.input_json["model"]["descriptor"]["axis_neuron"] = 16
         self.input_json["model"]["fitting_net"]["neuron"] = [64, 64, 64]
-        # TODO: change how the system paths are created, probably will have issues like this v v v
-        self.input_json["training"]["training_data"]["systems"] = [f"{os.getcwd()}/{s}/train" for s in systems]
-        self.input_json["training"]["validation_data"]["systems"] = [f"{os.getcwd()}/{s}/validation" for s in systems]
         self.input_json["training"]["numb_steps"] = 1000000
         self.input_json["training"]["disp_freq"] = 1000
         self.input_json["training"]["save_freq"] = 100000
+
+    def set_systems(self):
+        systems = [s for s in glob.glob(f"{self.path}/*") if os.path.isdir(s)]
+        systems.sort()
+
+        def get_paths(key):
+            return [os.path.join(s, key) for s in systems]
+
+        self.input_json["training"]["training_data"]["systems"] = get_paths("train")
+        self.input_json["training"]["validation_data"]["systems"] = get_paths("validation")
 
     def write_json(self):
         json_str = json.dumps(self.input_json, indent=4)
@@ -212,7 +218,8 @@ class CLI(BaseCLI):
         if args.n:
             raise NotImplementedError("n needs to be reworked, sorry (harass me if you need it)")
         sys_names = [db.split("/")[-1].split(".db")[0] for db in args.dbs]
-        thing = DeepInputs(args.dbs, system_names=sys_names, path=args.path)
+        path = os.path.abspath(args.path)
+        thing = DeepInputs(args.dbs, system_names=sys_names, path=path)
         self.ensemble = args.ensemble
         if self.ensemble:
             self.make_ensemble() # sets self.dirs
@@ -224,11 +231,9 @@ class CLI(BaseCLI):
     def make_ensemble(self):
         with open("in.json") as file:
             in_json = json.loads(file.read())
-        #in_jsons = [randomize_seed(in_json) for _ in range(4)]
         self.dirs = ["00", "01", "02", "03"]
         for d in self.dirs:
             jsn = randomize_seed(in_json)
-            print(jsn["model"]["descriptor"]["seed"])
             self.write_json(jsn, d)
 
     @staticmethod
