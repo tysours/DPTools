@@ -3,7 +3,7 @@ from importlib import import_module
 import argparse
 
 command2module = {
-    "input": "dptools.input",
+    "train": "dptools.train",
     "parity": "dptools.parity",
     "run": "dptools.lmp.simulations",
     #"sample": "dptools.sample",
