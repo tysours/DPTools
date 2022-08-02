@@ -86,7 +86,7 @@ class NVT(Simulation):
 class NPT(Simulation):
     @staticmethod
     def get_commands():
-        pass
+        raise NotImplementedError("Harass me if you need this")
 
 Simulations = {"spe": SPE, "opt": Opt, "cellopt": CellOpt, "nvt-md": NVT, "npt-md": NPT}
 
