@@ -64,12 +64,16 @@ class SlurmJob:
 
         self.text = header + exports + body
 
-    def write_input(self, path):
+    def _write_file(self, path):
         with open(path, "w") as file:
             file.write(self.text)
 
-    def submit(self):
+    def write(self, sub=False):
         for directory, path in zip(self.directories, self.paths):
-            self.write_input(path)
-            os.chdir(directory)
-            os.system(f"sbatch {self.file_name}")
+            self._write_file(path)
+            if sub:
+                os.chdir(directory)
+                os.system(f"sbatch {self.file_name}")
+
+    def submit(self):
+        self.write(sub=True)
