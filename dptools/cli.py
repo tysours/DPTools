@@ -6,7 +6,7 @@ command2module = {
     "train": "dptools.train",
     "parity": "dptools.parity",
     "run": "dptools.lmp.simulations",
-    #"sample": "dptools.sample",
+    "sample": "dptools.ensemble",
     "convert": "dptools.utils",
     "set": "dptools.env",
     "get": "dptools.lmp.parameters",
