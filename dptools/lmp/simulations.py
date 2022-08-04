@@ -19,15 +19,16 @@ class Simulation:
         self.path = path
         self.commands = self.get_commands(**kwargs)
 
-    def run(self):
+    def run(self, process=True):
         calc = DeepMD(self.graph, type_map=self.type_map, run_command=self.commands)
         self.atoms.calc = calc
         self.atoms.get_potential_energy()
-        self.process()
+        if process:
+            self.process()
 
     def process(self):
         """Simulation specific method to process and write results after calculation"""
-        self.atoms.write(self.file_out)
+        write(self.file_out, self.atoms)
 
     def _warn_unused(self, **kwargs):
         for k, v in kwargs.items():
