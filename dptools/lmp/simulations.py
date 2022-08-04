@@ -29,16 +29,24 @@ class Simulation:
         """Simulation specific method to process and write results after calculation"""
         self.atoms.write(self.file_out)
 
+    def _warn_unused(self, **kwargs):
+        for k, v in kwargs.items():
+            print(f"WARNING: {k}={v} unused for calculation type {self.calc_type}")
+
 
 class SPE(Simulation):
-    @staticmethod
-    def get_commands():
+    calc_type = "spe"
+
+    def get_commands(self, **kwargs):
+        self._warn_unused(**kwargs)
         commands = ["run 0"]
         return commands
 
 class Opt(Simulation):
-    @staticmethod
-    def get_commands(nsw=1000, ftol=1e-3, etol=0.0, disp_freq=10):
+    calc_type = "opt"
+
+    def get_commands(self, nsw=1000, ftol=1e-3, etol=0.0, disp_freq=10, **kwargs):
+        self._warn_unused(**kwargs)
         commands = [
             f"thermo {disp_freq}",
             f"minimize {etol} {ftol} {nsw} {nsw * 10}",
@@ -46,8 +54,10 @@ class Opt(Simulation):
         return commands
 
 class CellOpt(Simulation):
-    @staticmethod
-    def get_commands(nsw=1000, ftol=1e-3, etol=0.0, opt_type="aniso", Ptarget=0.0, disp_freq=10):
+    calc_type = "cellopt"
+
+    def get_commands(self, nsw=1000, ftol=1e-3, etol=0.0, opt_type="aniso", Ptarget=0.0, disp_freq=10, **kwargs):
+        self._warn_unused(**kwargs)
         commands = [
                 f"thermo {disp_freq}",
                 f"fix cellopt all box/relax {opt_type} {Ptarget}",
@@ -57,8 +67,10 @@ class CellOpt(Simulation):
         return commands
 
 class NVT(Simulation):
-    @staticmethod
-    def get_commands(steps=1000, timestep=0.5, Ti=298.0, Tf=298.0, equil_steps=1000, write_freq=100, disp_freq=100, pre_opt=True):
+    calc_type = "nvt-md"
+
+    def get_commands(self, steps=1000, timestep=0.5, Ti=298.0, Tf=298.0, equil_steps=1000, write_freq=100, disp_freq=100, pre_opt=True, **kwargs):
+        self._warn_unused(**kwargs)
         commands = []
         if pre_opt:
             commands += Opt.get_commands(nsw=200)
@@ -84,6 +96,8 @@ class NVT(Simulation):
 
 
 class NPT(Simulation):
+    calc_type = "npt-md"
+
     @staticmethod
     def get_commands():
         raise NotImplementedError("Harass me if you need this")
