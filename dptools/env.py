@@ -49,25 +49,26 @@ def get_dpfaults(key="model"):
                 "TF_INTER_OP_PARALLELISM_THREADS"]
 
         if not default_vals.get(keys[0], None):
-            host = socket.gethostname()
-            try:
-                for k, v in hpc_defaults[host].items():
-                    set_env(k, str(v))
-            except KeyError:
-                raise Exception("Host unrecognized and no default HPC parameters found."\
-                    "\nUse 'dptools set script.sh' with desired #SBATCH comment in script.sh")
-                    # XXX: What kind of exception would this be?
-
-            default_vals = get_env(env)
-            print("WARNING: set new default HPC parameters to env")
-            print("\nSettings:")
-            print("-" * 64)
-            for k in keys:
-                print(k, "=", default_vals[k])
-            print("-" * 64)
-        # this section is not going as smoothly as I envisioned 
+            set_default_sbatch()
+            default_vals = get_env()
         defaults = {k: default_vals[k] for k in keys}
     return defaults
+
+
+def set_default_sbatch():
+    host = socket.gethostname()
+    try:
+        print("WARNING: setting default HPC parameters to env")
+        print("\nSettings:")
+        print("-" * 64)
+        for k, v in hpc_defaults[host].items():
+            set_env(k, str(v))
+            print(k, "=", v)
+        print("-" * 64)
+    except KeyError:
+        raise Exception("Host unrecognized and no default HPC parameters found."\
+            "\nUse 'dptools set script.sh' with desired #SBATCH comment in script.sh")
+            # XXX: What kind of exception would this be?
 
 
 def set_model(model, n_model=""):
@@ -80,7 +81,17 @@ def set_model(model, n_model=""):
 
 
 def set_sbatch(script):
-    raise NotImplementedError("Harass me for this if you need it")
+    with open(script) as file:
+        lines = [l.strip() for l in file]
+    sbatch_vars = []
+    for l in lines:
+        if l.startswith("#SBATCH"):
+            sbatch_vars.extend(l.split()[1:])
+        elif l.startswith("export"):
+            var = l.split()[1]
+            set_env(*var.split("="))
+    sbatch_comment = "#SBATCH " + " ".join(sbatch_vars)
+    set_env("SBATCH_COMMENT", sbatch_comment)
 
 
 def set_params(params):
