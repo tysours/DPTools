@@ -21,6 +21,19 @@ def get_parameter_sets():
     return parameter_sets
 
 
+def set_parameter_set(param_dict):
+    if isinstance(param_dict, str):
+        with open(param_dict) as file:
+            param_dict = YAML(typ="safe").load(file.read())
+    basedir = os.path.abspath(os.path.dirname(__file__))
+    param_file = os.path.join(basedir, "parameter_sets.yaml")
+    parameter_sets = get_parameter_sets()
+    calc_type = param_dict.get("type")
+    parameter_sets[calc_type] = param_dict
+    with open(param_file, "w") as file:
+        YAML().dump(parameter_sets, file)
+
+
 descriptions = {
     "type": "Type of calculation (spe, opt, cellopt, nvt-md, npt-md)",
     "disp_freq": "Print lammps output every {disp_freq} steps (thermo disp_freq)",
