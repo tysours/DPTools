@@ -84,7 +84,8 @@ def set_sbatch(script):
 
 
 def set_params(params):
-    raise NotImplementedError("Harass me for this if you need it")
+    from dptools.lmp.parameters import set_parameter_set
+    set_parameter_set(params)
 
 
 class CLI(BaseCLI): # XXX: Everything about this could surely be improved
