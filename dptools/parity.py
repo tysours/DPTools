@@ -75,6 +75,14 @@ class EvaluateDeepMD:
         return np.mean((data[:, 0] - data[:, 1])**2)
 
     @staticmethod
+    def get_rmse(data):
+        return np.sqrt(np.mean((data[:, 0] - data[:, 1])**2))
+
+    @staticmethod
+    def get_mae(data):
+        return np.mean(np.abs(data[:, 0] - data[:, 1]))
+
+    @staticmethod
     def plot_yx(dft, ax):
         xrng = max(dft) - min(dft)
         xmin = min(dft) - 0.05 * xrng
