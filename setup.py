@@ -12,7 +12,7 @@ install_requires = [
 
 
 python_requires = ">=3.6"
-package_data = {'dptools': ['lmp/parameter_sets.yaml']}
+package_data = {'dptools': ['simulate/parameter_sets.yaml']}
 #packages = find_packages(where='dptools', include=['*.py'],  # alternatively: `exclude=['additional*']`
 #        ) # TODO: Figure out how to use this
 
