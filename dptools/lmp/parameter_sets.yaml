@@ -24,3 +24,15 @@ nvt-md:
   write_freq: 100
   disp_freq: 100
   pre_opt: true
+npt-md:
+  type: npt-md
+  steps: 10000
+  timestep: 0.5
+  Pi: 0.0
+  Pf: 0.0
+  Ti: 298.0
+  Tf: 298.0
+  equil_steps: 1000
+  write_freq: 100
+  disp_freq: 100
+  pre_opt: true

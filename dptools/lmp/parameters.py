@@ -46,7 +46,9 @@ descriptions = {
     "timestep": "[fs]",
     "equil_steps": "Number of timesteps to run initial equilibration at Ti",
     "Ti": "Initial temperature [K] at start of simulation",
-    "Tf": "Final temperature [K] of simulation (ramped form Ti to Tf)",
+    "Tf": "Final temperature [K] of simulation (ramped from Ti to Tf)",
+    "Pi": "Initial pressure [bar] at start of simulation",
+    "Pf": "Final pressure [bar] of simulation (ramped from Pi to Pf)",
     "pre_opt": "Optimize structure (and cell for npt-md) before starting MD run",
     "write_freq": "Write MD image every {write_freq} steps",
 }
