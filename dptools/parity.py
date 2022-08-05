@@ -119,30 +119,3 @@ class EvaluateDeepMD:
             plt.savefig('results.png')
         else:
             plt.show()
-
-
-class CLI(BaseCLI):
-    def add_args(self):
-        # TODO: add more optional args (e.g. save plot)
-        self.parser.add_argument("systems", nargs="*", metavar="system", help="Paths to deepmd-kit dataset folders, .traj, .db, etc.")
-        self.parser.add_argument("-m", "--model", nargs=1, type=str, default="./graph.pb",
-                help="Specify path of frozen .pb deepmd model to use")
-
-    def main(self, args):
-        print(args)
-        if len(args.systems) > 0:
-            systems = args.systems
-        else:
-            systems = self.read_systems()
-        evaldpmd = EvaluateDeepMD(systems, dp_graph=args.model)
-        evaldpmd.plot()
-
-
-    @staticmethod
-    def read_systems():
-        if "in.json" not in os.listdir():
-            raise FileNotFoundError("Systems not specified and no in.json in $PWD")
-        with open("in.json") as file:
-            params = json.loads(file.read())
-        systems = params["training"]['training_data']['systems']
-        return [f"{s.split('/train')[0]}/test/set.000" for s in systems]

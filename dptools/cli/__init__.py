@@ -2,16 +2,16 @@ from dptools import __version__
 from importlib import import_module
 import argparse
 
-command2module = {
-    "train": "dptools.train",
-    "parity": "dptools.parity",
-    "run": "dptools.lmp.simulations",
-    "sample": "dptools.ensemble",
-    "convert": "dptools.utils",
-    "set": "dptools.env",
-    "get": "dptools.lmp.parameters",
+commands = (
+    "train",
+    "parity",
+    "run",
+    "sample",
+    "convert",
+    "set",
+    "get",
     #"info": "dptools.?", show env stuff
-}
+)
 
 class BaseCLI:
     help_info = ""
@@ -36,8 +36,9 @@ def main():
     subparsers = parser.add_subparsers(dest="command")
     # TODO: Add logging
     command_clis = {}
-    for comm, mod in command2module.items():
+    for comm in commands:
         subparser = subparsers.add_parser(comm, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        mod = "dptools.cli." + comm
         CLI = import_module(mod).CLI
         cli = CLI(subparser)
         cli.add_args()

@@ -50,22 +50,3 @@ descriptions = {
     "pre_opt": "Optimize structure (and cell for npt-md) before starting MD run",
     "write_freq": "Write MD image every {write_freq} steps",
 }
-
-
-class CLI(BaseCLI):
-    def add_args(self):
-        self.parser.add_argument(
-            "calculation",
-            nargs=1,
-            type=str,
-            help="Calculation type to generate params.yaml file "
-            "(spe, opt, cellopt, nvt-md, npt-md)."
-            "\nCan also specify label of saved calculations (e.g. nvt-md.label)",
-        )
-
-    def main(self, args):
-        param_sets = get_parameter_sets()
-        params = param_sets[args.calculation[0]]
-        with open("params.yaml", "w") as file:
-            write_yaml(params, file)
-        return
