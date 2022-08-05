@@ -3,7 +3,7 @@ import os
 # defaults for Kulkarni group hpc systems
 hpc_defaults = {
         "cori10": {
-            "SBATCH_COMMENT": "#SiBATCH not implemented yet",
+            "SBATCH_COMMENT": "#SBATCH -J job -q shared -N 1 -t 11:00:00 -C haswell --output=job.out --error=job.err --ntasks=1 -c 1"
             "OMP_NUM_THREADS": "1",
             "TF_INTRA_OP_PARALLELISM_THREADS": "1",
             "TF_INTER_OP_PARALLELISM_THREADS": "1"
