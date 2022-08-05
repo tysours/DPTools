@@ -1,6 +1,6 @@
 import numpy as np
 import lammps
-from dptools.lmp.lammps_io import LammpsInput
+from dptools.simulate.lammps_io import LammpsInput
 from ase.calculators.calculator import (
     Calculator, all_changes, PropertyNotImplementedError
 )

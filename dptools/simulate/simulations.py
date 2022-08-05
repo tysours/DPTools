@@ -1,8 +1,8 @@
 from ase.io import read, write
 import os
 
-from dptools.lmp.calculator import DeepMD
-from dptools.lmp.parameters import get_parameter_sets
+from dptools.simulate import DeepMD
+from dptools.simulate.parameters import get_parameter_sets
 from dptools.utils import read_type_map, read_dump
 from dptools.utils import get_seed as seed
 from dptools.cli import BaseCLI

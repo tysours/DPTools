@@ -2,7 +2,7 @@ import os
 from ruamel.yaml import YAML
 from ase.io import read
 
-from dptools.lmp.simulations import Simulations
+from dptools.simulate import Simulations
 from dptools.utils import read_type_map
 from dptools.cli import BaseCLI
 from dptools.env import get_dpfaults, set_custom_env

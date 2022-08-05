@@ -95,5 +95,5 @@ def set_sbatch(script):
 
 
 def set_params(params):
-    from dptools.lmp.parameters import set_parameter_set
+    from dptools.simulate.parameters import set_parameter_set
     set_parameter_set(params)

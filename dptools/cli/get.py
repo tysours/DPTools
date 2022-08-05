@@ -1,5 +1,5 @@
 from dptools.cli import BaseCLI
-from dptools.lmp.parameters import get_parameter_sets, write_yaml
+from dptools.simulate.parameters import get_parameter_sets, write_yaml
 
 class CLI(BaseCLI):
     def add_args(self):
