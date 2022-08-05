@@ -92,7 +92,7 @@ class EvaluateDeepMD:
         ax.set_ylim([xmin, xmax])
         return
 
-    def plot_parity(self, data, label, color, loss='mse', ax=None):
+    def plot_parity(self, data, label, color, loss="mse", ax=None):
         if ax is None:
             ax = plt.gca()
         err = getattr(self, f"get_{loss.lower()}")(data)
@@ -103,7 +103,7 @@ class EvaluateDeepMD:
         ax.set_xlabel(f"DFT {label}", fontsize=14)
         ax.tick_params(labelsize=12)
 
-    def plot(self, axs=None):
+    def plot(self, loss="mse", axs=None):
         if axs is None:
             if len(self.virials) > 0:
                 fig, axs = plt.subplots(1, 3, figsize=(12.75, 3.5))
@@ -117,10 +117,10 @@ class EvaluateDeepMD:
         e_data = np.vstack(self.energies)
         f_data = np.vstack(self.forces)
 
-        self.plot_parity(e_data, "Energy (eV)", colors[3], ax=axs[0])
-        self.plot_parity(f_data, "Force (eV/Å)", colors[0], ax=axs[1])
+        self.plot_parity(e_data, "Energy (eV)", colors[3], loss=loss, ax=axs[0])
+        self.plot_parity(f_data, "Force (eV/Å)", colors[0], loss=loss, ax=axs[1])
         if len(axs) == 3:
-            self.plot_parity(v_data, "Virial", colors[2], ax=axs[2])
+            self.plot_parity(v_data, "Virial", colors[2], loss=loss, ax=axs[2])
         plt.tight_layout()
         plt.subplots_adjust(wspace=0.3)
         if self.save:
