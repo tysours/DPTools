@@ -18,7 +18,7 @@ class Simulation:
         self.commands = self.get_commands(**kwargs)
 
     def run(self, process=True):
-        calc = DeepMD(self.graph, type_map=self.type_map, run_command=self.commands)
+        calc = DeepMD(self.graph, type_map=self.type_map, run_command=self.commands, verbose=True)
         self.atoms.calc = calc
         self.atoms.get_potential_energy()
         if process:
@@ -72,7 +72,7 @@ class NVT(Simulation):
         self._warn_unused(**kwargs)
         commands = []
         if pre_opt:
-            commands += Opt.get_commands(nsw=200)
+            commands += Opt.get_commands(self, nsw=200)
         timestep = timestep * 1e-3 # convert to ps for lammps
         commands += [
             f"thermo {disp_freq}",
@@ -82,8 +82,10 @@ class NVT(Simulation):
             "timestep ${dt}",
             # XXX: Add customizable velocity keywords as args?
             f"velocity all create {Ti} {seed()} rot yes mom yes dist gaussian",
-            f"fix 2 all nvt temp {Ti} {Tf} ${{tdamp}}",
+            f"fix equil all nvt temp {Ti} {Ti} ${{tdamp}}",
             f"run {equil_steps}",
+             "unfix equil",
+            f"fix nvt_prod all nvt temp {Ti} {Tf} ${{tdamp}}",
             f"dump 1 all custom {write_freq} nvt.dump id type x y z",
             f"run {steps}"
             ]
@@ -97,9 +99,32 @@ class NVT(Simulation):
 class NPT(Simulation):
     calc_type = "npt-md"
 
-    @staticmethod
-    def get_commands():
-        raise NotImplementedError("Harass me if you need this")
+    def get_commands(self, steps=1000, timestep=0.5, Pi=0.0, Pf=0.0, Ti=298.0, Tf=298.0, equil_steps=1000, write_freq=100, disp_freq=100, pre_opt=True, **kwargs):
+        self._warn_unused(**kwargs)
+        commands = []
+        if pre_opt:
+            commands += CellOpt.get_commands(self, nsw=300)
+        timestep = timestep * 1e-3 # convert to ps for lammps
+        commands += [
+            f"thermo {disp_freq}",
+            f"variable\tdt\tequal\t0.5e-3",
+            "variable\tpdamp\tequal 1000*${dt}",
+            "variable\ttdamp\tequal 100*${dt}",
+            "run_style verlet",
+            "timestep ${dt}",
+            # XXX: Add customizable velocity keywords as args?
+            f"velocity all create {Ti} {seed()} rot yes mom yes dist gaussian",
+            f"fix equil all npt temp {Ti} {Ti} ${{tdamp}} tri {Pi} {Pi} ${{pdamp}}",
+            f"run {equil_steps}",
+             "unfix equil",
+            f"fix npt_prod all npt temp {Ti} {Tf} ${{tdamp}} tri {Pi} {Pf} ${{pdamp}}",
+            f"dump 1 all custom {write_freq} npt.dump id type x y z",
+            f"run {steps}"
+            ]
+        return commands
+
+    def process(self):
+        atoms = read_dump("npt.dump", self.type_map)
+        write(self.file_out, atoms)
 
 Simulations = {"spe": SPE, "opt": Opt, "cellopt": CellOpt, "nvt-md": NVT, "npt-md": NPT}
-
