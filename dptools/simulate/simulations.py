@@ -12,6 +12,8 @@ class Simulation:
     def __init__(self, atoms, graph, type_map, file_out="atoms.traj", path="./", **kwargs):
         if isinstance(atoms, str):
             atoms = read(atoms)
+        elif not isinstance(atoms, list):
+            atoms = [atoms]
         self.atoms = atoms
         self.graph = graph
         self.type_map = type_map
@@ -20,8 +22,9 @@ class Simulation:
 
     def run(self, process=True):
         calc = DeepMD(self.graph, type_map=self.type_map, run_command=self.commands, verbose=True)
-        self.atoms.calc = calc
-        self.atoms.get_potential_energy()
+        for atoms in self.atoms:
+            atoms.calc = calc
+            atoms.get_potential_energy()
         if process:
             self.process()
 
