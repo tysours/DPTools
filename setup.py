@@ -16,7 +16,7 @@ package_data = {'dptools': ['lmp/parameter_sets.yaml']}
 #packages = find_packages(where='dptools', include=['*.py'],  # alternatively: `exclude=['additional*']`
 #        ) # TODO: Figure out how to use this
 
-packages = ['dptools', 'dptools.lmp']
+packages = ['dptools', 'dptools.lmp', 'dptools.cli']
 
 setup(name='dpmdtools',
       version=version,
