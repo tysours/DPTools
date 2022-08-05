@@ -21,8 +21,9 @@ def get_env():
 
 
 def set_custom_env(label):
-    global env_file
-    env_file = default_env_file + "." + label
+    if label:
+        global env_file
+        env_file = default_env_file + "." + label
 
 
 def get_dpfaults(key="model"):
