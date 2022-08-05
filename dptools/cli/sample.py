@@ -6,6 +6,8 @@ from dptools.cli import BaseCLI
 from dptools.utils import graph2typemap, read_type_map
 
 class CLI(BaseCLI):
+    help_info = "Select new training configs from MD traj "\
+        "using force prediction deviations from ensemble of DPs"
     def add_args(self):
         help="Snapshots from MD simulation to select new training configuraitons from (.traj or similar)"
         self.parser.add_argument(

@@ -9,6 +9,8 @@ from dptools.env import get_dpfaults, set_custom_env
 
 
 class CLI(BaseCLI):
+    help_info = "Run simulation using trained DP model "\
+            "(USE COMMAND 'dptools set path/to/graph.pb' first)"
     def add_args(self):
         self.parser.add_argument(
             "calculation",

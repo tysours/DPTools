@@ -2,6 +2,8 @@ from dptools.cli import BaseCLI
 from dptools.simulate.parameters import get_parameter_sets, write_yaml
 
 class CLI(BaseCLI):
+    """Get params.yaml for specific simulation type"""
+    help_info = "Get params.yaml for specific calculation type"
     def add_args(self):
         self.parser.add_argument(
             "calculation",

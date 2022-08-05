@@ -2,6 +2,7 @@ from dptools.cli import BaseCLI
 from dptools.utils import Converter
 
 class CLI(BaseCLI):
+    help_info = "Convert between structure file types (e.g., .xml to .db)"
     def add_args(self):
         self.parser.add_argument(
             "inputs",

@@ -2,6 +2,7 @@ from dptools.cli import BaseCLI
 from dptools.parity import EvaluateDeepMD
 
 class CLI(BaseCLI):
+    help_info = "Generate energy and force (and stress if available) prediction parity plots for DP model"
     def add_args(self):
         # TODO: add more optional args (e.g. save plot)
         self.parser.add_argument("systems", nargs="*", metavar="system", help="Paths to deepmd-kit dataset folders, .traj, .db, etc.")

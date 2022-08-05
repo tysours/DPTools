@@ -3,6 +3,7 @@ from dptools.env import set_model, set_sbatch, set_params
 
 
 class CLI(BaseCLI): # XXX: Everything about this could surely be improved
+    help_info = "Set DP model defaults, calculation parameters, or sbatch settings"
     def add_args(self):
         help="Path to DP model, params.yaml, or {script}.sh to set as default.\n"\
              "Need .pb, .yaml, or .sh extension to set model, params, or sbatch, respectively."

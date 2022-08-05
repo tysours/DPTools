@@ -37,9 +37,10 @@ def main():
     # TODO: Add logging
     command_clis = {}
     for comm in commands:
-        subparser = subparsers.add_parser(comm, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         mod = "dptools.cli." + comm
         CLI = import_module(mod).CLI
+        subparser = subparsers.add_parser(comm, help=CLI.help_info,
+                formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         cli = CLI(subparser)
         cli.add_args()
         command_clis[comm] = cli

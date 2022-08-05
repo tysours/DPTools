@@ -8,6 +8,7 @@ from dptools.hpc import SlurmJob
 
 
 class CLI(BaseCLI):
+    help_info = "Set up deepmd-kit training input from ASE .db files and train model"
     def add_args(self):
         self.parser.add_argument("dbs", nargs='+', metavar="db", help="ASE .db files")
         self.parser.add_argument("-e", "--ensemble", action="store_true",
