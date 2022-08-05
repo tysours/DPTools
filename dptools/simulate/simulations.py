@@ -10,11 +10,12 @@ from dptools.cli import BaseCLI
 
 class Simulation:
     def __init__(self, atoms, graph, type_map, file_out="atoms.traj", path="./", **kwargs):
+        if isinstance(atoms, str):
+            atoms = read(atoms)
         self.atoms = atoms
         self.graph = graph
         self.type_map = type_map
-        self.file_out = file_out
-        self.path = path
+        self.file_out = os.path.join(path, file_out)
         self.commands = self.get_commands(**kwargs)
 
     def run(self, process=True):
