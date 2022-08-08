@@ -1,5 +1,5 @@
 from dptools.cli import BaseCLI
-from dptools.env import set_model, set_sbatch, set_params
+from dptools.env import set_model, set_sbatch, set_params, set_custom_env
 
 
 class CLI(BaseCLI): # XXX: Everything about this could surely be improved
@@ -12,8 +12,13 @@ class CLI(BaseCLI): # XXX: Everything about this could surely be improved
             nargs="+",
             help=help
         )
+        self.parser.add_argument("-m", "--model-label", type=str, default=None,
+                help="Save model/sbatch with specific label to access during "\
+                        "'dptools run -m {label} {calc} {structure}'")
 
     def main(self, args):
+        if args.model_label:
+            set_custom_env(args.model_label)
         for i, t in enumerate(args.thing):
             if t.endswith(".pb") and i > 0:
                 self.set(t, n_model=i+1)
