@@ -6,7 +6,6 @@ from ase.data import chemical_symbols
 import os
 import json
 
-from dptools.cli import BaseCLI
 
 def read_dump(dump, type_map, index=":"):
     type_map = read_type_map(type_map) # support str, json, dict inputs

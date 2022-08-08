@@ -2,8 +2,7 @@ import os
 import socket
 import dotenv
 
-from dptools.cli import BaseCLI
-from dptools.utils import typemap2str, str2typemap, read_type_map, graph2typemap
+from dptools.utils import typemap2str, str2typemap, graph2typemap
 from dptools.hpc import hpc_defaults
 
 basedir = os.path.abspath(os.path.dirname(__file__))

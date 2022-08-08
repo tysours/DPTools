@@ -2,16 +2,12 @@ import numpy as np
 from ase.db import connect
 from ase.io.formats import string2index
 import os
-import sys
-import shutil
 import glob
 from sklearn.utils import shuffle
 import json
 import requests
 
-from dptools.cli import BaseCLI
 from dptools.utils import randomize_seed
-from dptools.hpc import SlurmJob
 
 class DeepInput:
     def __init__(self, db_name, atoms=None, system_name=None, type_map=None, n=None, path="./data"):

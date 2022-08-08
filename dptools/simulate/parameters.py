@@ -1,8 +1,6 @@
 from ruamel.yaml import YAML
 import os
 
-from dptools.cli import BaseCLI
-
 
 def write_yaml(param_dict, file):
     lengths = [len(k) + len(str(v)) for k, v in param_dict.items()]

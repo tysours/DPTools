@@ -4,7 +4,6 @@ import random
 import os
 
 from dptools.utils import graph2typemap
-from dptools.cli import BaseCLI
 
 class SampleConfigs:
     def __init__(self, configs, graphs, type_map=None, indices=":"):
