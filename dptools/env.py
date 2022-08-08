@@ -54,33 +54,48 @@ def get_dpfaults(key="model"):
     return defaults
 
 
-def set_default_sbatch():
+def set_default_sbatch(warn=True):
     host = socket.gethostname()
     try:
-        print("WARNING: setting default HPC parameters to env")
-        print("\nSettings:")
-        print("-" * 64)
         for k, v in hpc_defaults[host].items():
             set_env(k, str(v))
-            print(k, "=", v)
-        print("-" * 64)
+        if warn:
+            print("WARNING: setting default HPC parameters to env")
+            print("\nSettings:")
+            for k, v in hpc_defaults[host].items():
+                print(k, "=", v)
+                print("-" * 64)
+            print("-" * 64)
     except KeyError:
         raise Exception("Host unrecognized and no default HPC parameters found."\
             "\nUse 'dptools set script.sh' with desired #SBATCH comment in script.sh")
             # XXX: What kind of exception would this be?
 
 
-def clear_ensemble():
-    vals = get_env()
-    ensemble_keys = ["DPTOOLS_MODEL2", "DPTOOLS_MODEL3", "DPTOOLS_MODEL4"]
-    for key in ensemble_keys:
-        if vals.get(key):
-            dotenv.unset_key(env_file, key)
+def clear(keys):
+    if keys is all:
+        os.remove(env_file)
+    else:
+        vals = get_env()
+        for key in keys:
+            if vals.get(key):
+                dotenv.unset_key(env_file, key)
+
+
+def clear_model():
+    keys = [
+            "DPTOOLS_TYPE_MAP",
+            "DPTOOLS_MODEL",
+            "DPTOOLS_MODEL2",
+            "DPTOOLS_MODEL3",
+            "DPTOOLS_MODEL4",
+        ]
+    clear(keys)
 
 
 def set_model(model, n_model=""):
     if not n_model:
-        clear_ensemble()
+        clear_model()
     graph = os.path.abspath(model)
     set_env(f"DPTOOLS_MODEL{n_model}", graph)
     if not n_model: # only write type_map once if setting ensemble of models
