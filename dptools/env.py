@@ -28,7 +28,6 @@ def set_custom_env(label):
 
 def get_dpfaults(key="model"):
     """ like defaults but for dp (haha... ha..) """
-    print(env_file)
     default_vals = get_env()
 
     if key == "model":
