@@ -10,6 +10,7 @@ commands = (
     "convert",
     "set",
     "get",
+    "reset",
     "info",
 )
 
