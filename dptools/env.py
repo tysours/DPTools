@@ -71,7 +71,17 @@ def set_default_sbatch():
             # XXX: What kind of exception would this be?
 
 
+def clear_ensemble():
+    vals = get_env()
+    ensemble_keys = ["DPTOOLS_MODEL2", "DPTOOLS_MODEL3", "DPTOOLS_MODEL4"]
+    for key in ensemble_keys:
+        if vals.get(key):
+            dotenv.unset_key(env_file, key)
+
+
 def set_model(model, n_model=""):
+    if not n_model:
+        clear_ensemble()
     graph = os.path.abspath(model)
     set_env(f"DPTOOLS_MODEL{n_model}", graph)
     if not n_model: # only write type_map once if setting ensemble of models
