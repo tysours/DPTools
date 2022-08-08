@@ -10,7 +10,7 @@ commands = (
     "convert",
     "set",
     "get",
-    #"info": "dptools.?", show env stuff
+    "info",
 )
 
 class BaseCLI:
