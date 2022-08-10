@@ -4,6 +4,7 @@ import random
 import os
 
 from dptools.utils import graph2typemap
+from dptools.parity import colors
 
 class SampleConfigs:
     def __init__(self, configs, graphs, type_map=None, indices=":"):
@@ -35,3 +36,13 @@ class SampleConfigs:
         i_new_configs = random.sample(list(i_configs), n_sample)
         new_configs = [self.configs[i] for i in i_new_configs]
         return new_configs
+
+    def plot(self, dev=None, ax=None):
+        import matplotlib.pyplot as plt
+        import seaborn as sns
+        if not dev:
+            dev = self.get_dev()
+        if ax is None:
+            ax = plt.gca()
+        
+        sns.kdeplot(dev)
