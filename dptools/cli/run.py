@@ -81,6 +81,7 @@ class CLI(BaseCLI):
         else:
             dirs = [os.path.dirname(s) for s in self.structures]
             if len(np.unique(dirs)) != len(self.structures):
+                # FIXME: Results are overwritten if multiple structure inputs are in the same dir
                 raise Exception("Can't resolve inputs, harass me to fix this")
 
         self.atoms = [read(s, index=index) for s in self.structures]
@@ -93,11 +94,13 @@ class CLI(BaseCLI):
 
         f_arg = f"-o {self.file_out}"
         m_arg = f"-m {self._label} " if self._label else ""
-        commands = f"dptools run {m_arg}{f_arg} {self.calc_arg} {self.structures[0]}"
+        comm_base = f"dptools run {m_arg}{f_arg} {self.calc_arg} "
+        commands = [comm_base + os.path.basename(s) for s in self.structures]
         jobs = SlurmJob(sbatch_comment,
                         commands=commands,
                         directories=self.dirs,
                         file_name="dptools.run.sh",
+                        zip_commands=True,
                         **hpc_info
                         )
         jobs.submit()
