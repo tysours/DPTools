@@ -18,17 +18,26 @@ class Simulation:
         self.file_out = os.path.join(path, file_out)
         self.commands = self.get_commands(**kwargs)
 
-    def run(self, process=True):
+    def run(self, process=True, commands=None, file_out=None):
+        commands = commands if commands else self.commands
         for atoms in self.atoms:
-            calc = DeepMD(self.graph, type_map=self.type_map, run_command=self.commands, verbose=True)
+            calc = DeepMD(self.graph, type_map=self.type_map, run_command=commands, verbose=True)
             atoms.calc = calc
             atoms.get_potential_energy()
         if process:
-            self.process()
+            self.process(file_out=file_out)
 
-    def process(self):
+    def process(self, file_out=None):
         """Simulation specific method to process and write results after calculation"""
-        write(self.file_out, self.atoms)
+        file_out = file_out if file_out else self.file_out
+        write(file_out, self.atoms)
+
+    def pre_opt(self, nsw, cell=False):
+        Opts = {False: Opt, True: CellOpt}
+        commands = Opts[cell].get_commands(self, nsw=nsw)
+        file_out = os.path.join(os.path.dirname(self.file_out), "pre_opt.traj")
+        self.run(process=False, commands=commands)
+        write(file_out, self.atoms)
 
     def _warn_unused(self, **kwargs):
         for k, v in kwargs.items():
@@ -43,6 +52,7 @@ class SPE(Simulation):
         commands = ["run 0"]
         return commands
 
+
 class Opt(Simulation):
     calc_type = "opt"
 
@@ -53,6 +63,7 @@ class Opt(Simulation):
             f"minimize {etol} {ftol} {nsw} {nsw * 10}",
             ]
         return commands
+
 
 class CellOpt(Simulation):
     calc_type = "cellopt"
@@ -67,14 +78,14 @@ class CellOpt(Simulation):
                 ]
         return commands
 
+
 class NVT(Simulation):
     calc_type = "nvt-md"
 
     def get_commands(self, steps=1000, timestep=0.5, Ti=298.0, Tf=298.0, equil_steps=1000, write_freq=100, disp_freq=100, pre_opt=True, **kwargs):
         self._warn_unused(**kwargs)
-        commands = []
         if pre_opt:
-            commands += Opt.get_commands(self, nsw=200)
+            self.pre_opt(200)
         timestep = timestep * 1e-3 # convert to ps for lammps
         commands += [
             f"thermo {disp_freq}",
@@ -93,7 +104,7 @@ class NVT(Simulation):
             ]
         return commands
 
-    def process(self):
+    def process(self, file_out=None):
         atoms = read_dump("nvt.dump", self.type_map)
         write(self.file_out, atoms)
 
@@ -103,11 +114,10 @@ class NPT(Simulation):
 
     def get_commands(self, steps=1000, timestep=0.5, Pi=0.0, Pf=0.0, Ti=298.0, Tf=298.0, equil_steps=1000, write_freq=100, disp_freq=100, pre_opt=True, **kwargs):
         self._warn_unused(**kwargs)
-        commands = []
         if pre_opt:
-            commands += CellOpt.get_commands(self, nsw=300)
+            self.pre_opt(200, cell=True)
         timestep = timestep * 1e-3 # convert to ps for lammps
-        commands += [
+        commands = [
             f"thermo {disp_freq}",
             f"variable\tdt\tequal\t0.5e-3",
             "variable\tpdamp\tequal 1000*${dt}",
@@ -125,8 +135,16 @@ class NPT(Simulation):
             ]
         return commands
 
-    def process(self):
+    def process(self, file_out=None):
         atoms = read_dump("npt.dump", self.type_map)
         write(self.file_out, atoms)
 
-Simulations = {"spe": SPE, "opt": Opt, "cellopt": CellOpt, "nvt-md": NVT, "npt-md": NPT}
+
+Simulations = {
+            "spe": SPE,
+            "opt": Opt,
+            "cellopt": CellOpt,
+            "nvt-md": NVT,
+            "npt-md": NPT,
+            "eos": EOS
+        }
