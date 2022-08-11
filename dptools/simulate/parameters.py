@@ -33,11 +33,11 @@ def set_parameter_set(param_dict):
 
 
 descriptions = {
-    "type": "Type of calculation (spe, opt, cellopt, nvt-md, npt-md)",
+    "type": "Type of calculation (spe, opt, cellopt, nvt-md, npt-md, eos)",
     "disp_freq": "Print lammps output every {disp_freq} steps (thermo disp_freq)",
     "nsw": "Max number of iterations",
-    "ftol": "Force convergence tolerance for lammps optimize",
-    "etol": "Energy convergence tolerance for lammps optimize",
+    "ftol": "Force convergence tolerance for lammps minimize",
+    "etol": "Energy convergence tolerance for lammps minimize",
     "opt_type": "(iso, aniso, tri) see https://docs.lammps.org/fix_box_relax.html",
     "Ptarget": "Desired pressure [eV/Å]",
     "steps": "Total number of timesteps to run simulation",
@@ -49,4 +49,7 @@ descriptions = {
     "Pf": "Final pressure [bar] of simulation (ramped from Pi to Pf)",
     "pre_opt": "Optimize structure (and cell for npt-md) before starting MD run",
     "write_freq": "Write MD image every {write_freq} steps",
+    "N": "Create N equally spaced structures with cell Volumes from V0*lo to V0*hi",
+    "lo": "Lower bound for cell deformations (min volume = lo * V0)",
+    "hi": "Upper bound for cell deformations (max volume = hi * V0)",
 }
