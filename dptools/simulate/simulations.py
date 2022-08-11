@@ -1,5 +1,7 @@
+from ase import units
 from ase.io import read, write
 import os
+import numpy as np
 
 from dptools.simulate.calculator import DeepMD
 from dptools.utils import read_dump
@@ -15,6 +17,7 @@ class Simulation:
         self.atoms = atoms
         self.graph = graph
         self.type_map = type_map
+        self.path = path
         self.file_out = os.path.join(path, file_out)
         self.commands = self.get_commands(**kwargs)
 
@@ -33,10 +36,12 @@ class Simulation:
         write(file_out, self.atoms)
 
     def pre_opt(self, nsw, cell=False):
-        Opts = {False: Opt, True: CellOpt}
+        Opts = {0: Opt, 1: CellOpt}
         commands = Opts[cell].get_commands(self, nsw=nsw)
-        file_out = os.path.join(os.path.dirname(self.file_out), "pre_opt.traj")
+
         self.run(process=False, commands=commands)
+
+        file_out = os.path.join(self.path, "pre_opt.traj")
         write(file_out, self.atoms)
 
     def _warn_unused(self, **kwargs):
@@ -140,11 +145,46 @@ class NPT(Simulation):
         write(self.file_out, atoms)
 
 
+class EOS(Simulation):
+    calc_type = "eos"
+
+    def get_commands(self, nsw=300, N=5, lo=0.98, hi=1.02, ftol=1e-3, etol=0.0, disp_freq=10, pre_opt=True, **kwargs):
+        self._warn_unused(**kwargs)
+        if pre_opt:
+            self.pre_opt(500, cell=True)
+
+        # only need to run standard optimizations on each cell volume
+        commands = Opt.get_commands(self, nsw=nsw, ftol=ftol, etol=etol, disp_freq=disp_freq)
+        self.set_volumes(lo, hi, N)
+        return commands
+
+    def set_volumes(self, lo, hi, N):
+        atoms, = self.atoms.copy()
+        self.atoms = []
+        for v in np.linspace(lo, hi, N):
+            new_atoms = atoms.copy()
+            new_cell = atoms.cell.array * v ** (1 / 3)
+            new_atoms.set_cell(new_cell, scale_atoms=True)
+            self.atoms.append(new_atoms)
+
+    def process(self, file_out=None):
+        from ase.eos import EquationOfState
+        volumes = [a.get_volume() for a in self.atoms]
+        energies = [a.get_potential_energy() for a in self.atoms]
+
+        # TODO: Add optional arg to change eos type
+        eos = EquationOfState(volumes, energies, eos='birchmurnaghan')
+        v0, e0, B = eos.fit()
+        bulk_mod = B / units.kJ * 1.0e24 # [GPa]
+        write(self.file_out, self.atoms)
+        print(f"BULK MODULUS: {bulk_mod:.3f} GPa")
+
+
 Simulations = {
-            "spe": SPE,
-            "opt": Opt,
-            "cellopt": CellOpt,
-            "nvt-md": NVT,
-            "npt-md": NPT,
-            "eos": EOS
-        }
+    "spe": SPE,
+    "opt": Opt,
+    "cellopt": CellOpt,
+    "nvt-md": NVT,
+    "npt-md": NPT,
+    "eos": EOS,
+}
