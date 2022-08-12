@@ -138,6 +138,9 @@ def get_seed(max_val=999999, n=1):
         seed = np.random.randint(max_val) # avoids single item array
     return seed
 
+def columnize(*data):
+    return np.array([d for d in data]).T
+
 class Converter:
     def __init__(self, inputs, output, indices=":"):
         self.inputs = inputs
