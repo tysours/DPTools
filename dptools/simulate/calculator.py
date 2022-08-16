@@ -203,6 +203,9 @@ class DeepMD(LmpCalc):
         self.io.write_input()
         self.lmp.command("clear")
         self.lmp.file("in.atoms")
+        with open("in.atoms", "a") as file:
+            for comm in self.run_command:
+                file.write(f"{comm}\n")
         if self.relax_UC:
             self.lmp.command("fix 1 all box/relax tri 1.0")
 
