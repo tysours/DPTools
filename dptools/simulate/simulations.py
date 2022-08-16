@@ -4,7 +4,7 @@ import os
 import numpy as np
 
 from dptools.simulate.calculator import DeepMD
-from dptools.utils import read_dump
+from dptools.utils import read_dump, columnize
 from dptools.utils import get_seed as seed
 
 
@@ -47,6 +47,10 @@ class Simulation:
     def _warn_unused(self, **kwargs):
         for k, v in kwargs.items():
             print(f"WARNING: {k}={v} unused for calculation type {self.calc_type}")
+
+    def write_array(self, data):
+        name = f"data.{self.calc_type}.npy"
+        np.save(name, data)
 
 
 class SPE(Simulation):
@@ -174,10 +178,16 @@ class EOS(Simulation):
 
         # TODO: Add optional arg to change eos type
         eos = EquationOfState(volumes, energies, eos='birchmurnaghan')
-        v0, e0, B = eos.fit()
-        bulk_mod = B / units.kJ * 1.0e24 # [GPa]
+        try:
+            v0, e0, B = eos.fit()
+            bulk_mod = B / units.kJ * 1.0e24 # [GPa]
+            print(f"BULK MODULUS: {bulk_mod:.3f} GPa")
+        except RuntimeError:
+            print("Bad EOS fit, can not determined bulk modulus")
+
         write(self.file_out, self.atoms)
-        print(f"BULK MODULUS: {bulk_mod:.3f} GPa")
+        eos_data = columnize(volumes, energies)
+        self.write_array(eos_data)
 
 
 Simulations = {
