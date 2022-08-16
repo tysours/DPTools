@@ -65,10 +65,11 @@ class SPE(Simulation):
 class Opt(Simulation):
     calc_type = "opt"
 
-    def get_commands(self, nsw=1000, ftol=1e-3, etol=0.0, disp_freq=10, **kwargs):
+    def get_commands(self, nsw=1000, ftol=1e-2, etol=0.0, disp_freq=10, **kwargs):
         self._warn_unused(**kwargs)
         commands = [
             f"thermo {disp_freq}",
+             "min_modify norm max",
             f"minimize {etol} {ftol} {nsw} {nsw * 10}",
             ]
         return commands
@@ -77,10 +78,11 @@ class Opt(Simulation):
 class CellOpt(Simulation):
     calc_type = "cellopt"
 
-    def get_commands(self, nsw=1000, ftol=1e-3, etol=0.0, opt_type="aniso", Ptarget=0.0, disp_freq=10, **kwargs):
+    def get_commands(self, nsw=1000, ftol=1e-2, etol=0.0, opt_type="aniso", Ptarget=0.0, disp_freq=10, **kwargs):
         self._warn_unused(**kwargs)
         commands = [
                 f"thermo {disp_freq}",
+                 "min_modify norm max",
                 f"fix cellopt all box/relax {opt_type} {Ptarget}",
                 f"minimize {etol} {ftol} {nsw} {nsw * 10}",
                  "unfix cellopt",

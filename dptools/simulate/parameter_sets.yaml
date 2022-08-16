@@ -3,13 +3,13 @@ spe:
 opt:
   type: opt
   nsw: 500
-  ftol: 0.001
+  ftol: 0.01
   etol: 0.0
   disp_freq: 10
 cellopt:
   type: cellopt
   nsw: 500
-  ftol: 0.001
+  ftol: 0.01
   etol: 0.0
   opt_type: aniso
   Ptarget: 0.0
