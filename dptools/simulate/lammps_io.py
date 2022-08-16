@@ -219,7 +219,8 @@ class LammpsInput:
         # XXX: groups is never None? rework groups eventually
         if groups is not None:
             #print("REMINDER TO REMOVE GROUP HARDCODING")
-            temp.data += "group\tsilica molecule 0\n"
+            pass
+            #temp.data += "group\tsilica molecule 0\n"
 #            for n, group in groups.items():
 #                temp.data += f"group\t{group} molecule {n}\n"
         temp.write(f"in.{self.name}", temp.data)
