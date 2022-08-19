@@ -1,3 +1,6 @@
+import os
+import json
+
 from dptools.cli import BaseCLI
 from dptools.parity import EvaluateDeepMD
 
@@ -12,7 +15,6 @@ class CLI(BaseCLI):
                 help="Type of loss function to display for parity plot error")
 
     def main(self, args):
-        print(args)
         if len(args.systems) > 0:
             systems = args.systems
         else:
@@ -20,12 +22,12 @@ class CLI(BaseCLI):
         evaldpmd = EvaluateDeepMD(systems, dp_graph=args.model)
         evaldpmd.plot(loss=args.loss_function)
 
-
     @staticmethod
     def read_systems():
-        if "in.json" not in os.listdir():
+        if "out.json" not in os.listdir() and "in.json" not in os.listdir():
             raise FileNotFoundError("Systems not specified and no in.json in $PWD")
+        in_file = "in.json" if "in.json" in os.listdir() else "out.json"
         with open("in.json") as file:
             params = json.loads(file.read())
-        systems = params["training"]['training_data']['systems']
+        systems = params["training"]["training_data"]["systems"]
         return [f"{s.split('/train')[0]}/test/set.000" for s in systems]
