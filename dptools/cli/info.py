@@ -73,6 +73,9 @@ class CLI(BaseCLI):
                 print(fmt.format(key=key, val=val))
         else:
             print("TYPE MAP:")
-            type_map = str2typemap(val)
-            for k, v in type_map.items():
-                print(f"{k}\t{v}")
+            if val:
+                type_map = str2typemap(val)
+                for k, v in type_map.items():
+                    print(f"{k}\t{v}")
+            else:
+                print("NO MODEL SET")
