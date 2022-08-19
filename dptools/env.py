@@ -61,10 +61,10 @@ def set_default_sbatch(warn=True):
             set_env(k, str(v))
         if warn:
             print("WARNING: setting default HPC parameters to env")
+            print("-" * 64)
             print("\nSettings:")
             for k, v in hpc_defaults[host].items():
                 print(k, "=", v)
-                print("-" * 64)
             print("-" * 64)
     except KeyError:
         raise Exception("Host unrecognized and no default HPC parameters found."\
