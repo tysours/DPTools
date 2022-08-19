@@ -8,36 +8,29 @@ from dptools.hpc import SlurmJob
 
 
 class CLI(BaseCLI):
-    help_info = "Set up deepmd-kit training input from ASE .db files and train model"
+    help_info = "Setup and submit jobs to train deepmd-kit models"
     def add_args(self):
-        self.parser.add_argument("dbs", nargs='+', metavar="db", help="ASE .db files")
         self.parser.add_argument("-e", "--ensemble", action="store_true",
                 help="Make ensemble (4) of DP models to train")
         self.parser.add_argument("-s", "--submit", action="store_true",
-                help="Automatically submit job(s) to train model(s) once input has been created")
-        self.parser.add_argument("-n", nargs=1, type=int,
-                help="Max number of images to take from each db")
-        self.parser.add_argument("-p", "--path", nargs=1, type=str, default="./data",
-                help="Specify path to dataset directory")
+                help="Automatically submit slurm job(s) to train model(s)")
+        self.parser.add_argument("-p", "--path", type=str, default=".",
+                help="Specify path to training directory")
 
     def main(self, args):
-        if args.n:
-            raise NotImplementedError("n needs to be reworked, sorry (harass me if you need it)")
-        sys_names = [db.split("/")[-1].split(".db")[0] for db in args.dbs]
-        path = os.path.abspath(args.path)
-        thing = DeepInputs(args.dbs, system_names=sys_names, path=path)
-        self.ensemble = args.ensemble
-        if self.ensemble:
+        self.path = os.path.abspath(args.path)
+        if args.ensemble:
             self.make_ensemble() # sets self.dirs
         else:
-            self.dirs = ["."]
-        if args.submit:
-            self.submit_jobs()
+            self.dirs = [path]
+        self._sub = args.submit
+        self.submit_jobs()
 
     def make_ensemble(self):
         with open("in.json") as file:
             in_json = json.loads(file.read())
-        self.dirs = ["00", "01", "02", "03"]
+        ens_dirs = ["00", "01", "02", "03"]
+        self.dirs = [os.path.join(self.path, d) for d in ens_dirs]
         for d in self.dirs:
             jsn = randomize_seed(in_json)
             self.write_json(jsn, d)
@@ -59,4 +52,4 @@ class CLI(BaseCLI):
                         directories=self.dirs,
                         file_name="dptools.train.sh",
                         **hpc_info)
-        jobs.submit()
+        jobs.write(sub=self._sub)

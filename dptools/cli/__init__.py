@@ -3,6 +3,7 @@ from importlib import import_module
 import argparse
 
 commands = (
+    "input",
     "train",
     "parity",
     "run",
