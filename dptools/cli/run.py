@@ -45,9 +45,9 @@ class CLI(BaseCLI):
         self.file_out = args.output
 
         if args.submit:
-            self.submit_jobs()
+            self.submit_jobs(sub=True)
         elif args.generate_input:
-            raise NotImplementedError("--generate-input work in progress, harass me if you need it")
+            self.submit_jobs(sub=False)
         else:
             self.run()
 
@@ -87,7 +87,7 @@ class CLI(BaseCLI):
         self.atoms = [read(s, index=index) for s in self.structures]
         self.dirs = dirs
 
-    def submit_jobs(self):
+    def submit_jobs(self, sub=True):
         from dptools.hpc import SlurmJob
         hpc_info = get_dpfaults(key="sbatch")
         sbatch_comment = hpc_info.pop("SBATCH_COMMENT")
@@ -103,7 +103,7 @@ class CLI(BaseCLI):
                         zip_commands=True,
                         **hpc_info
                         )
-        jobs.submit()
+        jobs.write(sub=sub)
 
     def run(self):
         wd = os.getcwd()
