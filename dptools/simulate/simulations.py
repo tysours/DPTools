@@ -98,7 +98,7 @@ class NVT(Simulation):
         if pre_opt:
             self.pre_opt(200)
         timestep = timestep * 1e-3 # convert to ps for lammps
-        commands += [
+        commands = [
             f"thermo {disp_freq}",
             f"variable\tdt\tequal\t0.5e-3",
             "variable\ttdamp\tequal 100*${dt}",
