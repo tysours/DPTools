@@ -40,8 +40,13 @@ class LmpCalc(Calculator):
             run_command = ["run 0"]
         elif isinstance(run_command, str):
             run_command = [run_command]
-        if relax_UC:
-            minimize = True
+        elif relax_UC:
+            run_command = ["fix cellopt all box/relax aniso 1.0",
+                           "min_modify norm max",
+                           f"minimize 0.0 {ftol} 1000 10000"]
+        elif minimize:
+            run_command = ["min_modify norm max",
+                           f"minimize 0.0 {ftol} 1000 10000"]
         self.lmp = lmp
         self.minimize = minimize
         self.relax_UC = relax_UC
@@ -195,19 +200,15 @@ class DeepMD(LmpCalc):
                               self.types, 
                               charges=self.charges,
                               pair_style=self.style,
-                              coeffs=self.coeffs,
-                              kspace_style=None,
-                              pair_coeffs=self.pair_coeffs)
-
-        self.io.write_atoms(self.atoms)
-        self.io.write_input()
+                              coeffs_dict=self.coeffs,
+                              pair_coeffs=self.pair_coeffs,
+                              )
+        self.io.write()
         self.lmp.command("clear")
         self.lmp.file("in.atoms")
         with open("in.atoms", "a") as file:
             for comm in self.run_command:
                 file.write(f"{comm}\n")
-        if self.relax_UC:
-            self.lmp.command("fix 1 all box/relax tri 1.0")
 
 
 class ClayFF(LmpCalc):
