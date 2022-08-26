@@ -200,8 +200,7 @@ class DeepMD(LmpCalc):
                               self.types, 
                               charges=self.charges,
                               pair_style=self.style,
-                              coeffs_dict=self.coeffs,
-                              pair_coeffs=self.pair_coeffs,
+                              pair_coeff=self.pair_coeffs,
                               )
         self.io.write()
         self.lmp.command("clear")
