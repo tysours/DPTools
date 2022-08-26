@@ -30,8 +30,8 @@ class SampleConfigs:
         return dev
 
     def sample(self, lo=0.05, hi=0.35, n=300):
-        dev = self.get_dev()
-        i_configs = np.where(np.logical_and(dev>=lo, dev<=hi))[0]
+        self.dev = self.get_dev()
+        i_configs = np.where(np.logical_and(self.dev>=lo, self.dev<=hi))[0]
         n_sample = n if n < len(i_configs) else len(i_configs)
         i_new_configs = random.sample(list(i_configs), n_sample)
         new_configs = [self.configs[i] for i in i_new_configs]
@@ -41,8 +41,12 @@ class SampleConfigs:
         import matplotlib.pyplot as plt
         import seaborn as sns
         if not dev:
-            dev = self.get_dev()
+            if hasattr(self, "dev"):
+                dev = self.dev
+            else:
+                dev = self.get_dev()
         if ax is None:
             ax = plt.gca()
         
         sns.kdeplot(dev)
+        return ax
