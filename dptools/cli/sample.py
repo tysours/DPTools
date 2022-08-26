@@ -24,16 +24,21 @@ class CLI(BaseCLI):
                 help="File to write new configurations to")
         self.parser.add_argument("-m", "--model-ensemble", nargs="+", type=str,
                 help="Paths to ensemble of models or label of set models")
+        self.parser.add_argument("-p", "--plot-dev", action="store_true",
+                help="Plot max force deviation of model ensemble for each config")
 
 
     def main(self, args):
         configs = read(args.configurations, index=":")
         outfile = os.path.abspath(args.output)
+        print(args)
         self.load_ensemble(args.model_ensemble) # sets self.type_map and self.graphs
 
         sampler = SampleConfigs(configs, self.ensemble, read_type_map(self.type_map))
         new_configs = sampler.sample(lo=args.lo, hi=args.hi, n=args.n)
         write(outfile, new_configs)
+        if args.plot_dev:
+            self.plot(sampler)
 
     def load_ensemble(self, ensemble):
         if not ensemble:
@@ -45,3 +50,9 @@ class CLI(BaseCLI):
         else:
             self.type_map = graph2typemap(ensemble[0])
         self.ensemble = ensemble
+
+    def plot(self, sampler):
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots(figsize=(5.5, 4))
+        ax = sampler.plot(ax=ax)
+        plt.show()
