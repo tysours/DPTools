@@ -1,4 +1,5 @@
 from ase.io import read, write
+import numpy as np
 import os
 
 from dptools.ensemble import SampleConfigs
@@ -12,6 +13,7 @@ class CLI(BaseCLI):
         help="Snapshots from MD simulation to select new training configuraitons from (.traj or similar)"
         self.parser.add_argument(
             "configurations",
+            nargs="+",
             help=help
         )
         self.parser.add_argument("-n", type=int, default=300,
@@ -29,16 +31,21 @@ class CLI(BaseCLI):
 
 
     def main(self, args):
-        configs = read(args.configurations, index=":")
-        outfile = os.path.abspath(args.output)
-        print(args)
+        self.outfile = os.path.basename(args.output)
         self.load_ensemble(args.model_ensemble) # sets self.type_map and self.graphs
+        self.set_configs(args.configurations)
+        self.devs = [] # max force deviation of model ensemble
 
-        sampler = SampleConfigs(configs, self.ensemble, read_type_map(self.type_map))
-        new_configs = sampler.sample(lo=args.lo, hi=args.hi, n=args.n)
-        write(outfile, new_configs)
+        wd = os.getcwd()
+        for configs, dir in zip(self.configs, self.dirs):
+            os.chdir(dir)
+
+            self.sample(configs, args)
+
+            os.chdir(wd)
+
         if args.plot_dev:
-            self.plot(sampler)
+            self.plot()
 
     def load_ensemble(self, ensemble):
         if not ensemble:
@@ -51,8 +58,28 @@ class CLI(BaseCLI):
             self.type_map = graph2typemap(ensemble[0])
         self.ensemble = ensemble
 
-    def plot(self, sampler):
+    def set_configs(self, configs):
+        self.configs = [os.path.abspath(c) for c in configs]
+        if len(configs) == 1:
+            dirs = ["."]
+        else:
+            dirs = [os.path.dirname(c) for c in self.configs]
+            if len(np.unique(dirs)) != len(self.configs):
+                # FIXME: Results are overwritten if multiple structure inputs are in the same dir
+                raise Exception("Can't resolve inputs, harass me to fix this")
+        self.dirs = dirs
+    
+    def sample(self, configs, args):
+        self.sampler = SampleConfigs(configs, self.ensemble, read_type_map(self.type_map))
+        new_configs = self.sampler.sample(lo=args.lo, hi=args.hi, n=args.n)
+
+        self.devs.append(self.sampler.dev)
+        write(self.outfile, new_configs)
+
+    def plot(self):
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots(figsize=(5.5, 4))
-        ax = sampler.plot(ax=ax)
+        for dev, dir in zip(self.devs, self.dirs):
+            ax = self.sampler.plot(dev=dev, ax=ax, label=os.path.relpath(dir))
+        ax.legend()
         plt.show()
