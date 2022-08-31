@@ -3,8 +3,7 @@ import numpy as np
 import random
 import os
 
-from dptools.utils import graph2typemap
-from dptools.parity import colors
+from dptools.utils import graph2typemap, next_color
 
 class SampleConfigs:
     def __init__(self, configs, graphs, type_map=None, indices=":"):
@@ -37,16 +36,16 @@ class SampleConfigs:
         new_configs = [self.configs[i] for i in i_new_configs]
         return new_configs
 
-    def plot(self, dev=None, ax=None):
+    def plot(self, dev=None, ax=None, color=None, label=None):
         import matplotlib.pyplot as plt
         import seaborn as sns
-        if not dev:
+        if dev is None:
             if hasattr(self, "dev"):
                 dev = self.dev
             else:
                 dev = self.get_dev()
-        if ax is None:
-            ax = plt.gca()
+        ax = plt.gca() if ax is None else ax
+        color = next_color() if color is None else color
         
-        sns.kdeplot(dev)
+        sns.kdeplot(dev, fill=True, label=label or "")
         return ax
