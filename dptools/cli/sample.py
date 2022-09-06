@@ -16,6 +16,8 @@ class CLI(BaseCLI):
             nargs="+",
             help=help
         )
+        self.parser.add_argument("-m", "--model-ensemble", nargs="+", type=str,
+                help="Paths to ensemble of models or label of set models")
         self.parser.add_argument("-n", type=int, default=300,
                 help="Max number of new configurations to select")
         self.parser.add_argument("--lo", type=float, default=0.05,
@@ -24,8 +26,6 @@ class CLI(BaseCLI):
                 help="Max value of eps_t (force dev) to select new configs from")
         self.parser.add_argument("-o", "--output", nargs=1, type=str, default="new_configs.traj",
                 help="File to write new configurations to")
-        self.parser.add_argument("-m", "--model-ensemble", nargs="+", type=str,
-                help="Paths to ensemble of models or label of set models")
         self.parser.add_argument("-p", "--plot-dev", action="store_true",
                 help="Plot max force deviation of model ensemble for each config")
 
@@ -48,12 +48,12 @@ class CLI(BaseCLI):
             self.plot()
 
     def load_ensemble(self, ensemble):
-        if not ensemble:
-            from dptools.env import get_dpfaults
+        if not ensemble or len(ensemble) == 1:
+            from dptools.env import set_custom_env, get_dpfaults
+            if len(ensemble) == 1:
+                set_custom_env(ensemble[0])
             defaults = get_dpfaults(key="ensemble")
             self.type_map, *ensemble = defaults
-        elif len(ensemble) == 1:
-            raise NotImplementedError("ensemble label not implemented, harass me if you need it")
         else:
             self.type_map = graph2typemap(ensemble[0])
         self.ensemble = ensemble
