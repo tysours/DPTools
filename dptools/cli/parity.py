@@ -2,7 +2,7 @@ import os
 import json
 
 from dptools.cli import BaseCLI
-from dptools.parity import EvaluateDeepMD
+from dptools.train.parity import EvaluateDeepMD
 
 class CLI(BaseCLI):
     help_info = "Generate energy and force (and stress if available) prediction parity plots for DP model"

@@ -2,7 +2,7 @@ from ase.io import read, write
 import numpy as np
 import os
 
-from dptools.ensemble import SampleConfigs
+from dptools.train.ensemble import SampleConfigs
 from dptools.cli import BaseCLI
 from dptools.utils import graph2typemap, read_type_map
 

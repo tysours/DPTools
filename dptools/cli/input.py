@@ -1,7 +1,7 @@
 import os
 
 from dptools.cli import BaseCLI
-from dptools.train import DeepInputs
+from dptools.train.input import DeepInputs
 
 
 class CLI(BaseCLI):
