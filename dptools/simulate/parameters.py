@@ -39,7 +39,7 @@ descriptions = {
     "ftol": "Force convergence tolerance for lammps minimize",
     "etol": "Energy convergence tolerance for lammps minimize",
     "opt_type": "(iso, aniso, tri) see https://docs.lammps.org/fix_box_relax.html",
-    "Ptarget": "Desired pressure [eV/Å]",
+    "Ptarget": "Desired pressure [bar]",
     "steps": "Total number of timesteps to run simulation",
     "timestep": "[fs]",
     "equil_steps": "Number of timesteps to run initial equilibration at Ti",
