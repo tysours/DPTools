@@ -19,21 +19,21 @@
 * Supports Slurm job submission on HPC systems
 * Setup and run simulations on thousands of structures with a single command
 
+## Documentation
+For detailed descriptions on setting up and using DPTools, visit the [official documentation](https://dptools.readthedocs.io).
+
 ## Installation
 The current stable version (0.2.2) of DPTools can be installed using `pip` with the following command:
 
-'''
+~~~
 pip install dpmdtools
-'''
+~~~
 
 To verify that the installation was completed successfully, run the command:
 
-'''
+~~~
 dptools --version
-'''
-
-## Documentation
-For detailed descriptions on setting up and using DPTools, visit the official documentation (coming soon...).
+~~~
 
 ## Support
 If you are having issues with DPTools, create an issue [here](https://github.com/tysours/DPTools/issues). For more assistance, new feature requests, or general inquiries, feel free to contact Ty at tsours@ucdavis.edu.
