@@ -1,11 +1,6 @@
-#import lammps
 import numpy as np
 import os
-import sys
-import json
 import re
-from ase.neighborlist import NeighborList
-from ase.neighborlist import natural_cutoffs
 from ase.data import atomic_masses, atomic_numbers
 from ase.geometry.analysis import Analysis
 from textwrap import dedent
@@ -15,7 +10,6 @@ from ase.calculators.lammpslib import convert_cell
 class LammpsInput:
     """
     Creates lammps input files from ASE Atoms object
-    Messy and needs to be redone
 
     Parameters
     ----------
@@ -42,8 +36,7 @@ class LammpsInput:
 
     groups: list, list of groups for each atom
 
-    coeffs_dict: dict, maps FF params to atom types, #TODO: rework this
-    pair_coeffs: list[str], pair_coeff line(s) to define ij interactions
+    pair_coeff: list[str], pair_coeff line(s) to define ij interactions
     """
         
     def __init__(self, atoms, type_dict, 
@@ -58,36 +51,46 @@ class LammpsInput:
                  bond_style=None,
                  angle_style=None,
                  kspace_style=None,
+                 pair_coeff=None,
+                 bond_coeff=None,
+                 angle_coeff=None,
                  groups=None,
-                 coeffs_dict=None,
-                 pair_coeffs=None,
                  ):
 
         self.atoms = atoms
-        self.set_style("atom", atom_style)
-        self.set_style("pair", pair_style)
-        self.set_style("bond", bond_style)
-        self.set_style("angle", angle_style)
-        self.set_style("kspace", kspace_style)
+        self.set_lmp_cmd("atom_style", atom_style)
+        self.set_lmp_cmd("pair_style", pair_style)
+        self.set_lmp_cmd("bond_style", bond_style)
+        self.set_lmp_cmd("angle_style", angle_style)
+        self.set_lmp_cmd("kspace_style", kspace_style)
+        self.set_lmp_cmd("pair_coeff", pair_coeff)
+        self.set_lmp_cmd("bond_coeff", bond_coeff)
+        self.set_lmp_cmd("angle_coeff", angle_coeff)
 
         if charges is None:
             charges = atoms.get_initial_charges()
         self.charges = charges
         self.groups = groups
         self.type_dict = type_dict
-        self.coeffs_dict = coeffs_dict
-        self.pair_coeffs = pair_coeffs
         self._bonds = bonds
         self._angles = angles
         self._dihedrals = dihedrals
         self._impropers = impropers
         self.name = name
 
-    def set_style(self, style, text):
-        style = style if style.endswith("_style") else f"{style}_style"
-        if text and not text.startswith(style):
-            text = f"{style} {text}"
-        setattr(self, style, text or "")
+    def set_lmp_cmd(self, command, text):
+        if isinstance(text, list):
+            lines = [self.prepend_command(command, l) for l in text]
+            new_text = "\n".join(lines)
+        else:
+            new_text = self.prepend_command(command, text)
+        setattr(self, command, new_text or "")
+
+    @staticmethod
+    def prepend_command(command, text):
+        if text and not text.startswith(command):
+            text = f"{command} {text}"
+        return text
 
     def write(self, atoms=None, charges=None):
         self.write_atoms(atoms=atoms, charges=charges)
@@ -102,7 +105,7 @@ class LammpsInput:
         self.write_coords()
 
         for key in ["bonds", "angles", "dihedrals", "impropers"]:
-            self.write_geometry(key)
+            self._write_geometry(key)
 
         datatemp = DataTemplate(f"data.{self.name}", self)
         datatemp.write()
@@ -128,22 +131,15 @@ class LammpsInput:
         self.ntypes = len(self.type_dict.keys())
 
         types_str = ""
-        coeffs_str = ""
-        if self.coeffs_dict is not None:
-            coeffs_str += "Pair Coeffs\n\n"
-
         for k, v in self.type_dict.items():
             sym = v.split('_')[0]
             mass = atomic_masses[atomic_numbers[sym]]
             types_str += f"{k} {mass} # {v}\n"
-            if self.coeffs_dict is not None:
-                coeffs = ' '.join(self.coeffs_dict[k])
-                coeffs_str += f"{k} {coeffs}\n"
 
         self.types = types_str
-        self.coeffs = coeffs_str
 
     def write_coords(self):
+        """Writes Coords section (atomic positions) in lammps datafile"""
         coords_str = ""
         zeros = np.zeros(self.natoms, dtype=int)
         groups = self.groups if self.groups is not None else zeros
@@ -163,26 +159,29 @@ class LammpsInput:
         return
 
     def write_bonds(self):
-        anal = Analysis(self.atoms) # pronounced uh-nahl
+        """
+        (Deprecated, may restore) Write all bonds in self.atoms to lammps datafile
+        """
+        self.anal = Analysis(self.atoms)
+        tags = self.atoms.get_tags()
         bond_types = {}
 
         def b_str(t1, t2): 
             return f"{t1}-{t2}" if t1 < t2 else f"{t2}-{t1}"
 
-        for i, bonds in enumerate(anal.unique_bonds[0]):
+        for i, bonds in enumerate(self.anal.unique_bonds[0]):
             for bond in bonds:
-                b_type = b_str(self.tags[i], self.tags[bond])
+                b_type = b_str(tags[i], tags[bond])
                 if b_type in bond_types:
                     bond_types[b_type].append((i, bond))
                 else:
                     bond_types[b_type] = [(i, bond)]
-            
+
         bonds_str = "Bonds\n\n"
         n_bond = 0
         for i, (b_type, bonds) in enumerate(bond_types.items()):
-            for bond in bonds: # I can't remember what k is here, 
-                               # I'm assuming this code fails but haven't checked
-                bonds_str += f"\t{n_bond+1}\t{i+k}\t{bond[0]+1}\t{bond[1]+1}\n"
+            for bond in bonds:
+                bonds_str += f"\t{n_bond+1}\t{i+1}\t{bond[0]+1}\t{bond[1]+1}\n"
                 n_bond += 1
 
         self.nbonds = n_bond
@@ -190,7 +189,73 @@ class LammpsInput:
         self.bonds = bond_str
 
     def write_angles(self):
+        """
+        (Deprecated, may restore) Write all angles in self.atoms to lammps datafile
+        """
+        if not hasattr(self, "anal"): # don't recalc if already done in write_bonds()
+            self.anal = Analysis(self.atoms)
+        tags = self.atoms.get_tags()
+        angle_types = {}
+
+        def a_str(t1, t2, t3):
+            t = sorted([t1, t2, t3])
+            return f"{t[1]}-{t[0]}-{t[2]}"
+
+        for i, angles in enumerate(self.anal.unique_angles[0]):
+            for angle in angles:
+                a_type = a_str(tags[i], tags[angle[0]], tags[angle[1]])
+                if a_type in angle_types:
+                    angle_types[a_type].append((i, angle))
+                else:
+                    bond_types[b_type] = [(i, bond)]
+
         raise NotImplementedError("Too lazy to add angles, harass me if you need it")
+
+    def _write_geometry(self, key):
+        """Generalized method to write bonds, angles, maybe dihedrals (key)"""
+        n = 0
+        n_types = 0
+        text = ""
+        if getattr(self, f"_{key}"): # e.g. if _bonds, write bonds
+            if key in ["dihedrals", "impropers"]:
+                raise NotImplementedError(f"{key} not implemented, harass me if you need it")
+
+            # define order of indices when writing key 
+            # (e.g. angles need central atom in middle, 1-0-2)
+            orders = {"bonds": "01", "angles": "102", "dihedrals": "0123"}
+            if not hasattr(self, "anal"): # only calc once
+                self.anal = Analysis(self.atoms) # pronounced uh-nahl
+
+            def t_str(order, *t):
+                tsorted = [str(sorted(t)[int(i)]) for i in order]
+                return "-".join(tsorted)
+
+            tags = self.atoms.get_tags()
+            types = {}
+            unique = getattr(self.anal, f"unique_{key}")[0]
+            for i, groups in enumerate(unique):
+                for neighbors in groups:
+                    if isinstance(neighbors, np.int32):
+                        neighbors = [neighbors] # bonds only have single (int) neighbor
+                    typ = t_str(orders[key], tags[i], *[tags[n] for n in neighbors])
+
+                    if typ in types:
+                        types[typ].append((i, *neighbors))
+                    else:
+                        types[typ] = [(i, *neighbors)]
+
+            n_types = len(types)
+            text = key.capitalize() + "\n\n"
+            #for i, (typ, groups) in enumerate(types.items()):
+            for i, typ in enumerate(sorted(types.keys())):
+                for group in types[typ]:
+                    g_str = "\t".join([str(g + 1) for g in group]) 
+                    text += f" {n+1}\t{i+1}\t{g_str}\n"
+                    n += 1
+
+        setattr(self, key, text)
+        setattr(self, f"n{key}", n)
+        setattr(self, f"n{key[0]}types", n_types)
 
     def write_dihedrals(self):
         raise NotImplementedError("Too lazy to add dihedrals, harass me if you need it")
@@ -200,13 +265,8 @@ class LammpsInput:
                 " but i'll figure it out if you need it")
 
     def write_infile(self): 
-        if not self.coeffs_dict and not self.pair_coeffs:
-            self.pair_coeffs = "pair_coeff * *\n"
-        elif self.pair_coeffs is not None:
-            if isinstance(self.pair_coeffs, list):
-                self.pair_coeffs = '\n'.join(self.pair_coeffs)
-            elif not isinstance(self.pair_coeffs, str):
-                raise TypeError("str or list needed for pair_coeffs")
+        if not self.pair_coeff:
+            self.pair_coeff = "pair_coeff * *\n"
 
         if self.groups is not None:
             raise NotImplementedError("Harass me if you need it")
@@ -266,13 +326,13 @@ class DataTemplate(Template):
 
         <types>
 
-        <coeffs>
-
         Atoms # <atom_style>
 
         <coords>
 
         <bonds>
+
+        <angles>
 
         <dihedrals>
 
@@ -290,11 +350,18 @@ class InputTemplate(Template):
         <pair_style>
         <bond_style>
         <angle_style>
-        <kspace_style>
 
         box tilt\tlarge
         read_data\tdata.<name>
-        <pair_coeffs>
+
+        <pair_coeff>
+
+        <bond_coeff>
+
+        <angle_coeff>
+
+        <kspace_style>
+
         <groups>
         thermo_style custom step temp etotal pe press pxx pyy pzz pxy pxz pyz lx ly lz vol
         ''')
