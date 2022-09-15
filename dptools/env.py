@@ -2,7 +2,7 @@ import os
 import socket
 import dotenv
 
-from dptools.utils import typemap2str, str2typemap, graph2typemap
+from dptools.utils import typemap2str, graph2typemap
 from dptools.hpc import hpc_defaults
 
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -42,9 +42,9 @@ def get_dpfaults(key="model"):
         defaults = tuple([default_vals.get(k) for k in keys])
 
     elif key == "sbatch":
-        keys = ["SBATCH_COMMENT", 
-                "OMP_NUM_THREADS", 
-                "TF_INTRA_OP_PARALLELISM_THREADS", 
+        keys = ["SBATCH_COMMENT",
+                "OMP_NUM_THREADS",
+                "TF_INTRA_OP_PARALLELISM_THREADS",
                 "TF_INTER_OP_PARALLELISM_THREADS"]
 
         if not default_vals.get(keys[0], None):
