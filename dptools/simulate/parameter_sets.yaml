@@ -42,7 +42,7 @@ eos:
   N: 5
   lo: 0.96
   hi: 1.04
-  ftol: 0.001
+  ftol: 0.01
   etol: 0.0
   disp_freq: 100
   pre_opt: true
