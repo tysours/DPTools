@@ -50,6 +50,9 @@ class CLI(BaseCLI):
         self.info[label] = get_env()
 
     def summarize(self):
+        if not self.info:
+            print("No info to display, try setting a model using:",
+                    "\t dptools set /path/to/graph.pb")
         for env, vals in self.info.items():
             print("-" * 64)
             print(f"{env.upper()} env")
