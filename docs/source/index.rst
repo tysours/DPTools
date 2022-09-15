@@ -5,6 +5,7 @@
 
 Welcome to DPTools's documentation!
 ===================================
+Work in progress, coming soon...
 
 .. toctree::
    installation
