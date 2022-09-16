@@ -1,7 +1,7 @@
-from ase import units
-from ase.io import read, write
 import os
 import numpy as np
+from ase import units
+from ase.io import read, write
 
 from dptools.simulate.calculator import DeepMD
 from dptools.utils import read_dump, columnize
@@ -19,6 +19,10 @@ class Simulation:
         self.type_map = type_map
         self.path = path
         self.file_out = os.path.join(path, file_out)
+        self.setup(**kwargs)
+
+    def setup(self, **kwargs):
+        """Simulation specific method to do any needed setup before running (e.g., cell deformations)"""
         self.commands = self.get_commands(**kwargs)
 
     def run(self, process=True, commands=None, file_out=None):
@@ -93,10 +97,14 @@ class CellOpt(Simulation):
 class NVT(Simulation):
     calc_type = "nvt-md"
 
-    def get_commands(self, steps=1000, timestep=0.5, Ti=298.0, Tf=298.0, equil_steps=1000, write_freq=100, disp_freq=100, pre_opt=True, **kwargs):
-        self._warn_unused(**kwargs)
+    def setup(self, pre_opt=True, **kwargs):
         if pre_opt:
             self.pre_opt(200)
+
+        self.get_commands(**kwargs)
+
+    def get_commands(self, steps=10000, timestep=0.5, Ti=298.0, Tf=298.0, equil_steps=1000, write_freq=100, disp_freq=100, **kwargs):
+        self._warn_unused(**kwargs)
         timestep = timestep * 1e-3 # convert to ps for lammps
         commands = [
             f"thermo {disp_freq}",
@@ -123,10 +131,14 @@ class NVT(Simulation):
 class NPT(Simulation):
     calc_type = "npt-md"
 
-    def get_commands(self, steps=1000, timestep=0.5, Pi=0.0, Pf=0.0, Ti=298.0, Tf=298.0, equil_steps=1000, write_freq=100, disp_freq=100, pre_opt=True, **kwargs):
-        self._warn_unused(**kwargs)
+    def setup(self, pre_opt=True, **kwargs):
         if pre_opt:
             self.pre_opt(200, cell=True)
+
+        self.get_commands(**kwargs)
+
+    def get_commands(self, steps=10000, timestep=0.5, Pi=0.0, Pf=0.0, Ti=298.0, Tf=298.0, equil_steps=1000, write_freq=100, disp_freq=100, **kwargs):
+        self._warn_unused(**kwargs)
         timestep = timestep * 1e-3 # convert to ps for lammps
         commands = [
             f"thermo {disp_freq}",
@@ -154,14 +166,19 @@ class NPT(Simulation):
 class EOS(Simulation):
     calc_type = "eos"
 
-    def get_commands(self, nsw=300, N=5, lo=0.98, hi=1.02, ftol=1e-3, etol=0.0, disp_freq=10, pre_opt=True, **kwargs):
-        self._warn_unused(**kwargs)
+    def setup(self, N=5, lo=0.96, hi=1.04, pre_opt=True, **kwargs):
         if pre_opt:
-            self.pre_opt(500, cell=True)
+            self.pre_opt(200, cell=True)
+
+        self.set_volumes(lo, hi, N)
+
+        self.get_commands(**kwargs)
+
+    def get_commands(self, nsw=300, ftol=1e-3, etol=0.0, disp_freq=10, **kwargs):
+        self._warn_unused(**kwargs)
 
         # only need to run standard optimizations on each cell volume
         commands = Opt.get_commands(self, nsw=nsw, ftol=ftol, etol=etol, disp_freq=disp_freq)
-        self.set_volumes(lo, hi, N)
         return commands
 
     def set_volumes(self, lo, hi, N):
@@ -186,6 +203,7 @@ class EOS(Simulation):
             print(f"BULK MODULUS: {bulk_mod:.3f} GPa")
         except RuntimeError:
             print("Bad EOS fit, can not determined bulk modulus")
+            print("Check energy versus volume data in data.eos.npy")
 
         write(self.file_out, self.atoms)
         eos_data = columnize(volumes, energies)
