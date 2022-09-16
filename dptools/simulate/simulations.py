@@ -239,7 +239,9 @@ class Vib(Simulation):
                     self.atoms.append(new_atoms)
 
     def get_commands(self, **kwargs):
-        raise NotImplementedError("Coming soon...")
+        # only need to run SPE on each displacement
+        commands = SPE.get_commands(self, **kwargs)
+        return commands
 
     def process(self):
         raise NotImplementedError("Coming soon...")
