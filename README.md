@@ -11,10 +11,9 @@
 	* Single point energy calculations
 	* Structure geometry optimizations
 	* Structure unit cell optimizations
-	* Molecular dynamics using the NVT ensemble
-	* Molecular dynamics using the NPT ensemble
-	* Equations of State fits and bulk moduli calculations
-	* Predict vibratrional properties using the finite difference approach
+	* Molecular dynamics (NVT and NPT ensembles)
+	* Equations of State and bulk moduli calculations
+	* Vibratrional properties using the finite differences approach
 	* Other common simulation methods available upon request
 * Supports Slurm job submission on HPC systems
 * Setup and run simulations on thousands of structures with a single command
@@ -22,7 +21,7 @@
 ## Documentation
 For detailed descriptions on setting up and using DPTools, visit the [official documentation](https://dptools.readthedocs.io).
 
-## Installation
+## Quick Install
 The current stable version (0.2.2) of DPTools can be installed using `pip` with the following command:
 
 ~~~
