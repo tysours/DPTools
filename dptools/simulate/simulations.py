@@ -210,6 +210,41 @@ class EOS(Simulation):
         self.write_array(eos_data)
 
 
+class Vib(Simulation):
+    calc_type = "vib"
+
+    def setup(self, nfree=2, delta=0.015, pre_opt=True, **kwargs):
+        if pre_opt:
+            self.pre_opt(200)
+
+        self.set_displacements(nfree, delta)
+        self.commands = self.get_commands(**kwargs)
+
+    def set_displacements(self, nfree, delta):
+        if nfree not in [2, 4]:
+            raise ValueError("Only supports nfree = 2 or 4")
+        atoms, = self.atoms.copy()
+        self.atoms = []
+
+        displacements = [-1, 1, -0.5, 0.5]
+        n_displacements = 3 * nfree * len(atoms)
+
+        # nesting order of displacements: p/m displacement, xyz, indices
+        for i in range(nfree):
+            d = displacements[i] * delta # magnitude of displacement to translate each atom
+            for j in range(3): # xyz directions
+                for a in atoms:
+                    new_atoms = atoms.copy()
+                    new_atoms[a.index].position[j] += d
+                    self.atoms.append(new_atoms)
+
+    def get_commands(self, **kwargs):
+        raise NotImplementedError("Coming soon...")
+
+    def process(self):
+        raise NotImplementedError("Coming soon...")
+
+
 Simulations = {
     "spe": SPE,
     "opt": Opt,
@@ -217,4 +252,5 @@ Simulations = {
     "nvt-md": NVT,
     "npt-md": NPT,
     "eos": EOS,
+    "vib": Vib,
 }
