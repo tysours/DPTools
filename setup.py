@@ -16,7 +16,7 @@ package_data = {'dptools': ['simulate/parameter_sets.yaml']}
 #packages = find_packages(where='dptools', include=['*.py'],  # alternatively: `exclude=['additional*']`
 #        ) # TODO: Figure out how to use this
 
-packages = ['dptools', 'dptools.simulate', 'dptools.cli']
+packages = ['dptools', 'dptools.simulate', 'dptools.cli', 'dptools.train']
 
 setup(name='dpmdtools',
       version=version,
@@ -32,7 +32,7 @@ setup(name='dpmdtools',
       package_data=package_data,
       entry_points={'console_scripts': ['dptools=dptools.cli:main']},
       classifiers=[
-          'Development Status :: 2 - Pre-Alpha',
+          'Development Status :: 3 - Alpha',
           'License :: OSI Approved :: MIT License',
           'Operating System :: OS Independent',
           'Programming Language :: Python :: 3',
