@@ -39,9 +39,9 @@ class Simulation:
         file_out = file_out if file_out else self.file_out
         write(file_out, self.atoms)
 
-    def pre_opt(self, nsw, cell=False):
+    def pre_opt(self, nsw, cell=False, ftol=0.01):
         Opts = {0: Opt, 1: CellOpt}
-        commands = Opts[cell].get_commands(self, nsw=nsw)
+        commands = Opts[cell].get_commands(self, nsw=nsw, ftol=ftol)
 
         self.run(process=False, commands=commands)
 
@@ -213,38 +213,57 @@ class EOS(Simulation):
 class Vib(Simulation):
     calc_type = "vib"
 
-    def setup(self, nfree=2, delta=0.015, pre_opt=True, **kwargs):
+    def setup(self, pre_opt=True, **kwargs):
         if pre_opt:
-            self.pre_opt(200)
+            # tight ftol convergence for vib to ensure minimum is reached
+            self.pre_opt(200, ftol=0.001)
 
-        self.set_displacements(nfree, delta)
         self.commands = self.get_commands(**kwargs)
 
     def set_displacements(self, nfree, delta):
+        # NOTE: deprecated, way more efficient to just use
+        #       lammps built in dynamical_matrix command
         if nfree not in [2, 4]:
             raise ValueError("Only supports nfree = 2 or 4")
         atoms, = self.atoms.copy()
-        self.atoms = []
 
-        displacements = [-1, 1, -0.5, 0.5]
+        displacements = [-1, 1, -2, 2]
         n_displacements = 3 * nfree * len(atoms)
 
-        # nesting order of displacements: p/m displacement, xyz, indices
-        for i in range(nfree):
-            d = displacements[i] * delta # magnitude of displacement to translate each atom
+        for a in atoms:
             for j in range(3): # xyz directions
-                for a in atoms:
+                for i in range(nfree):
+                    d = displacements[i] * delta # magnitude of displacement to translate each atom
                     new_atoms = atoms.copy()
                     new_atoms[a.index].position[j] += d
                     self.atoms.append(new_atoms)
 
-    def get_commands(self, **kwargs):
-        # only need to run SPE on each displacement
-        commands = SPE.get_commands(self, **kwargs)
+    def get_commands(self, delta=0.015, **kwargs):
+        self._warn_unused(**kwargs)
+        # calculate dynamical matrix / mass weighted hessian
+        commands = [f"dynamical_matrix all eskm {delta} file dynmat.dat"]
         return commands
 
-    def process(self):
-        raise NotImplementedError("Coming soon...")
+    def process(self, file_out=None):
+        dyn_mat = np.loadtxt("dynmat.dat")
+        n = len(self.atoms[0])
+        # need to reshape lammps dynammical matrix output to square (3n x 3n)
+        dyn_mat = dyn_mat.reshape(3 * n, 3 * n)
+
+        eig_vals, eig_vecs = np.linalg.eig(dyn_mat)
+        imag_filt = np.array([-1 if e < 0 else 1 for e in eig_vals])
+
+        # speed of light [m/s] https://physics.nist.gov/cgi-bin/cuu/Value?c
+        c = 299792458.0
+        conversion = 1e12 / (c * 100) # Hz --> cm-1
+        freq = np.sqrt(np.abs(eig_vals)) / (2 * np.pi) * conversion
+        freq *= imag_filt # save imaginary frequencies as negative
+
+        self.write_array(freq)
+        
+        for j, f in enumerate(freq):
+            i = "i" if f < 0 else "" 
+            print(f"Mode {j}: {abs(f):.2f}{i}")
 
 
 Simulations = {
