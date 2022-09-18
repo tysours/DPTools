@@ -6,7 +6,8 @@ def write_yaml(param_dict, file):
     lengths = [len(k) + len(str(v)) for k, v in param_dict.items()]
     column = max(lengths) + 4  # align parameter description comments
     for param in param_dict:
-        param_dict.yaml_add_eol_comment(descriptions[param], key=param, column=column)
+        description = descriptions.get(param, f"No description available for parameter '{param}'")
+        param_dict.yaml_add_eol_comment(description, key=param, column=column)
     YAML().dump(param_dict, file)
     return
 
@@ -52,4 +53,6 @@ descriptions = {
     "N": "Create N equally spaced structures with cell Volumes from V0*lo to V0*hi",
     "lo": "Lower bound for cell deformations (min volume = lo * V0)",
     "hi": "Upper bound for cell deformations (max volume = hi * V0)",
+    "nfree": "(2 or 4) Number of displacements for each degree of freedom",
+    "delta": "Magnitude of each displacement [Å]",
 }

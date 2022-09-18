@@ -46,3 +46,7 @@ eos:
   etol: 0.0
   disp_freq: 100
   pre_opt: true
+vib:
+  type: vib
+  delta: 0.015
+  pre_opt: true
