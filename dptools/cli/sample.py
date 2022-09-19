@@ -50,7 +50,7 @@ class CLI(BaseCLI):
     def load_ensemble(self, ensemble):
         if not ensemble or len(ensemble) == 1:
             from dptools.env import set_custom_env, get_dpfaults
-            if len(ensemble) == 1:
+            if ensemble is not None and len(ensemble) == 1:
                 set_custom_env(ensemble[0])
             defaults = get_dpfaults(key="ensemble")
             self.type_map, *ensemble = defaults
