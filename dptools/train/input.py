@@ -1,13 +1,12 @@
+import os
+import glob
+import json
+import requests
 import numpy as np
 from ase.db import connect
 from ase.io.formats import string2index
-import os
-import glob
 from sklearn.utils import shuffle
-import json
-import requests
 
-from dptools.utils import randomize_seed
 
 class DeepInput:
     def __init__(self, db_name, atoms=None, system_name=None, type_map=None, n=None, path="./data"):
