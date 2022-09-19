@@ -3,19 +3,22 @@ import os
 # defaults for Kulkarni group hpc systems
 hpc_defaults = {
         "cori10": {
-            "SBATCH_COMMENT": "#SBATCH -J job -q shared -N 1 -t 11:00:00 -C haswell --output=job.out --error=job.err --ntasks=1 -c 1",
+            "SBATCH_COMMENT": "#SBATCH -J job -q shared -N 1 -t 11:00:00 "\
+                "-C haswell --output=job.out --error=job.err --ntasks=1 -c 1",
             "OMP_NUM_THREADS": "1",
             "TF_INTRA_OP_PARALLELISM_THREADS": "1",
             "TF_INTER_OP_PARALLELISM_THREADS": "1"
             },
         "hpc1": {
-            "SBATCH_COMMENT": "#SBATCH --partition=med -N 1 --ntasks-per-node=8 --output=job.out --error=job.err -t 96:00:00",
+            "SBATCH_COMMENT": "#SBATCH --partition=med -N 1 --ntasks-per-node=8 "\
+                "--output=job.out --error=job.err -t 96:00:00",
             "OMP_NUM_THREADS": "8",
             "TF_INTRA_OP_PARALLELISM_THREADS": "6",
             "TF_INTER_OP_PARALLELISM_THREADS": "2"
             },
         "hpc2": {
-            "SBATCH_COMMENT": "#SBATCH --partition=med -N 1 --ntasks-per-node=8 --output=job.out --error=job.err -t 96:00:00",
+            "SBATCH_COMMENT": "#SBATCH --partition=med -N 1 --ntasks-per-node=8 "\
+                "--output=job.out --error=job.err -t 96:00:00",
             "OMP_NUM_THREADS": "8",
             "TF_INTRA_OP_PARALLELISM_THREADS": "6",
             "TF_INTER_OP_PARALLELISM_THREADS": "2"
@@ -24,7 +27,7 @@ hpc_defaults = {
 
 # TODO: Split sbatch into n_nodes, n_tasks_per_node, etc.
 class SlurmJob:
-    def __init__(self, 
+    def __init__(self,
                  sbatch_comment,
                  commands="",
                  directories=".",
@@ -36,7 +39,7 @@ class SlurmJob:
         self.sbatch = sbatch_comment
         self._zip = zip_commands
         self.commands = commands
-        self.set_path_stuff(directories, file_name) # what's the term for this? setting directories + file_name + full path
+        self.set_path_stuff(directories, file_name)
         self.set_sh_text(**kwargs)
 
     def get_header(self):
@@ -74,8 +77,7 @@ class SlurmJob:
     def text(self):
         if self._zip:
             return self._text + next(self.comm_generator)
-        else:
-            return self._text
+        return self._text
 
     @text.setter
     def text(self, new_text):
