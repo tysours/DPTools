@@ -8,10 +8,26 @@ Welcome to DPTools's documentation!
 Work in progress, coming soon...
 
 .. toctree::
+   :maxdepth: 3
+   :caption: Getting Started
+
+   overview
    installation
 
-   :caption: Contents:
+.. toctree::
+   :maxdepth: 5
+   :caption: Usage
 
+   commands/index
+   tutorials/index
+   faq
+
+.. toctree::
+   :maxdepth: 3
+   :caption: Source
+
+   DPTools GitHub <https://github.com/tysours/DPTools>
+   Reporting Issues <https://github.com/tysours/DPTools/issues>
 
 
 Indices and tables
