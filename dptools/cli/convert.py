@@ -20,4 +20,12 @@ class CLI(BaseCLI):
 
     def main(self, args):
         converter = Converter(args.inputs, args.output[0], args.indices)
-        converter.convert()
+        self.get_kwargs(args.inputs)
+        converter.convert(**self.kwargs)
+
+    def get_kwargs(self, inputs):
+        self.kwargs = {}
+        if inputs[0].endswith(".dump"):
+            from dptools.env import get_dpfaults
+            graph, type_map = get_dpfaults()
+            self.kwargs.setdefault("type_map", type_map)

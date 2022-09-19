@@ -17,6 +17,10 @@ class SampleConfigs:
         self.graphs = graphs
 
     def get_dev(self):
+        if "dev.npy" in os.listdir():
+            print(f"Reading dev from {os.path.abspath('dev.npy')} ...")
+            return np.load("dev.npy")
+
         from deepmd.infer import calc_model_devi
         from deepmd.infer import DeepPot as DP
         pos = np.array([a.get_positions().flatten() for a in self.configs])
@@ -49,4 +53,7 @@ class SampleConfigs:
         color = next_color() if color is None else color
         
         sns.kdeplot(dev, fill=True, label=label or "")
+        ax.set_ylabel("Density", fontsize=14)
+        ax.set_xlabel("$\epsilon_t$ (eV/Å)", fontsize=14)
+        ax.tick_params(labelsize=10)
         return ax
