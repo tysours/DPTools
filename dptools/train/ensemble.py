@@ -26,6 +26,7 @@ class SampleConfigs:
         models = [DP(g) for g in self.graphs]
 
         dev = calc_model_devi(pos, cell, types, models, nopbc=False)[:, 4]
+        np.save("dev.npy", dev)
         return dev
 
     def sample(self, lo=0.05, hi=0.35, n=300):
