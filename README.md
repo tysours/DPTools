@@ -13,7 +13,7 @@
 	* Structure unit cell optimizations
 	* Molecular dynamics (NVT and NPT ensembles)
 	* Equations of State and bulk moduli calculations
-	* Vibratrional properties using the finite differences approach
+	* Vibratrional/phonon modes using the finite differences approach
 	* Other common simulation methods available upon request
 * Supports Slurm job submission on HPC systems
 * Setup and run simulations on thousands of structures with a single command
@@ -22,7 +22,7 @@
 For detailed descriptions on setting up and using DPTools, visit the [official documentation](https://dptools.readthedocs.io).
 
 ## Quick Install
-The current stable version (0.2.2) of DPTools can be installed using `pip` with the following command:
+The current stable version (1.0.0) of DPTools can be installed using `pip` with the following command:
 
 ~~~
 pip install dpmdtools
