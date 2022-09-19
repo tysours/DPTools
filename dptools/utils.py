@@ -113,7 +113,11 @@ def read_type_map(type_map_json):
         else:
             type_map = str2typemap(type_map_json)
     else:
-        raise TypeError(f"Unknown type_map format provided: {type_map_json}")
+        if type_map_json is None:
+            msg = "No default model set, try using:\tdptools set /path/to/graph.pb"
+        else:
+            msg = f"Unknown type_map format provided: {type_map_json}"
+        raise TypeError(msg)
     return check_type_map(type_map)
 
 def check_type_map(type_map_dict):
