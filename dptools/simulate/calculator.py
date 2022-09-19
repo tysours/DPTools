@@ -55,6 +55,7 @@ class LmpCalc(Calculator):
 
     def calculate(self, 
                   atoms=None, 
+                  update=True,
                   properties=["energy", "forces", "stress"],
                   system_changes=all_changes):
         """
@@ -73,23 +74,21 @@ class LmpCalc(Calculator):
         # XXX: Is there a better way to do this? Always write input or no?
         self.write_input(atoms)
 
-        if self.minimize:
-            self.lmp.command(f"minimize 0.0 {self.ftol} 10000 100000")
-        else:
-            for comm in self.run_command:
-                self.lmp.command(comm)
+        for comm in self.run_command:
+            self.lmp.command(comm)
 
-        # lammps is annoying and jumbles up indices sometimes
-        ids = self.lmp.numpy.extract_atom("id").T[0]
-        self._sort = np.argsort(ids)
+        if update:
+            # lammps is annoying and jumbles up indices sometimes
+            ids = self.lmp.numpy.extract_atom("id").T[0]
+            self._sort = np.argsort(ids)
 
-        self.update_atoms(atoms)
-        energy = self.lmp.get_thermo("etotal")
-        forces = self.lmp.numpy.extract_atom("f")[self._sort]
-        stress = self.read_stress()
-        self.results["energy"] = energy
-        self.results["forces"] = forces
-        self.results["stress"] = stress
+            self.update_atoms(atoms)
+            energy = self.lmp.get_thermo("etotal")
+            forces = self.lmp.numpy.extract_atom("f")[self._sort]
+            stress = self.read_stress()
+            self.results["energy"] = energy
+            self.results["forces"] = forces
+            self.results["stress"] = stress
 
     def update_atoms(self, atoms):
         positions = self.lmp.numpy.extract_atom("x")[self._sort]
