@@ -204,10 +204,10 @@ class Converter:
         return ftype
 
 
-    def convert(self):
+    def convert(self, **kwargs):
         traj = []
         for i in self.inputs:
-            atoms = self.reader(i, index=self.indices)
+            atoms = self.reader(i, index=self.indices, **kwargs)
             if len(traj) > 0:
                 # check to see if first image is identical to last image of previous file
                 # primarily for concatenating MD runs from flex/overrun jobs
