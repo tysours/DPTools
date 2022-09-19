@@ -37,4 +37,10 @@ setup(name='dpmdtools',
           'Operating System :: OS Independent',
           'Programming Language :: Python :: 3',
           'Intended Audience :: Science/Research',
-          'Topic :: Scientific/Engineering :: Chemistry'])
+          'Topic :: Scientific/Engineering :: Chemistry'],
+      project_urls={
+          'Documentation': 'http://dptools.readthedocs.io/',
+          'Source': 'https://github.com/tysours/DPTools',
+          'Tracker': 'https://github.com/tysours/DPTools/issues',
+          },
+      )
