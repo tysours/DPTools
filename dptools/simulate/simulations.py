@@ -244,13 +244,27 @@ class Vib(Simulation):
         commands = [f"dynamical_matrix all eskm {delta} file dynmat.dat"]
         return commands
 
-    def process(self, file_out=None):
+    def run(self):
+        atoms, = self.atoms
+        calc = DeepMD(self.graph,
+                      type_map=self.type_map,
+                      run_command=self.commands,
+                      verbose=True,
+                      )
+
+        # Need to not update results or lammps crashes, and no reason to write
+        # results to Atoms object anyway since we only care about dynmat.dat file
+        calc.calculate(atoms, update=False)
+        self.process()
+
+    def process(self):
         dyn_mat = np.loadtxt("dynmat.dat")
         n = len(self.atoms[0])
-        # need to reshape lammps dynammical matrix output to square (3n x 3n)
+        # reshape lammps dynammical matrix output to square (3n x 3n)
         dyn_mat = dyn_mat.reshape(3 * n, 3 * n)
 
         eig_vals, eig_vecs = np.linalg.eig(dyn_mat)
+        eig_vals = np.flip(np.sort(eig_vals))
         imag_filt = np.array([-1 if e < 0 else 1 for e in eig_vals])
 
         # speed of light [m/s] https://physics.nist.gov/cgi-bin/cuu/Value?c
