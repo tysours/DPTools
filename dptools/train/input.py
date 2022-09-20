@@ -1,7 +1,6 @@
 import os
 import glob
 import json
-import requests
 import numpy as np
 from ase.db import connect
 from ase.io.formats import string2index
@@ -70,7 +69,7 @@ class DeepInput:
             if n_train < 1:
                 raise ValueError(f"Need more images in {self.db_name}, \
                         {len(self.energies)} entries")
-        
+
         self.write_types()
         self.write_npy("train", ":" + str(n_train))
         self.write_npy("validation", str(n_train) + ":" + str(n_val))
@@ -102,8 +101,20 @@ class DeepInput:
         self.type_map = {v: k for k, v in type_keys.items()}
 
 
-class DeepInputs(DeepInput):
-    def __init__(self, db_names, atoms=None, system_names=None, type_map=None, n=None, path="./data"):
+class DeepInputs:
+
+    def __init__(self,
+                 db_names,
+                 atoms=None,
+                 system_names=None,
+                 type_map=None,
+                 n=None,
+                 in_json=None,
+                 path="./data",
+                 ):
+
+        self.path = path
+        os.makedirs(self.path, exist_ok=True)
         if atoms is None:
             atoms = self.get_atoms(db_names)
         elif not isinstance(atoms, list):
@@ -116,37 +127,29 @@ class DeepInputs(DeepInput):
             db_names = [db_names]
         if type_map is None:
             type_map = self.get_type_map(atoms)
+        if in_json is None:
+            default_path = os.path.abspath(os.path.dirname(__file__))
+            in_json = os.path.join(default_path, "in.json")
 
-        self.path = path
         self.type_map = type_map
+        self._json_file = in_json
 
         for db, a, sys in zip(db_names, atoms, system_names):
             dpi = DeepInput(db, a, sys, self.type_map, n=n, path=path)
 
-        self.get_json()
+        self.set_json()
         self.update_json()
         self.write_json()
 
-    def get_json(self):
-        url = "https://raw.githubusercontent.com/deepmodeling/deepmd-kit/master/examples/water/se_e3/input.json"
-        r = requests.get(url, allow_redirects=True)
-        self.input_json = json.loads(r.content)
+    def set_json(self):
+        with open(self._json_file, "r") as file:
+            self.input_json = json.loads(file.read())
 
     def update_json(self):
         self.set_systems()
-        types = [self.type_map[i] for i in range(len(self.type_map))]
 
-        # TODO: make this more customizable
+        types = [self.type_map[i] for i in range(len(self.type_map))]
         self.input_json["model"]["type_map"] = types
-        self.input_json["model"]["descriptor"]["type"] = "se_e2_a"
-        self.input_json["model"]["descriptor"]["neuron"] = [16, 32, 64]
-        self.input_json["model"]["descriptor"]["rcut"] = 6.0
-        self.input_json["model"]["descriptor"]["rcut_smth"] = 5.5
-        self.input_json["model"]["descriptor"]["axis_neuron"] = 16
-        self.input_json["model"]["fitting_net"]["neuron"] = [64, 64, 64]
-        self.input_json["training"]["numb_steps"] = 1000000
-        self.input_json["training"]["disp_freq"] = 1000
-        self.input_json["training"]["save_freq"] = 100000
 
     def set_systems(self):
         systems = [s for s in glob.glob(f"{self.path}/*") if os.path.isdir(s)]
@@ -174,9 +177,10 @@ class DeepInputs(DeepInput):
 
     def get_type_map(self, atoms):
         # TODO: put the print stuff in the cli section?
-        if "type_map.json" in os.listdir():
+        tm_path = os.path.join(self.path, "type_map.json")
+        if "type_map.json" in os.listdir(self.path):
             print("READING type_map.json")
-            with open("type_map.json", "r") as file:
+            with open(tm_path, "r") as file:
                 type_map = json.loads(file.read())
             type_map = {int(i): s for i, s in type_map.items()}
         else:
@@ -185,9 +189,9 @@ class DeepInputs(DeepInput):
                 symbols.extend(np.unique(a.get_chemical_symbols()))
 
             symbols = np.unique(symbols)
-            type_map = {i: s for i, s in enumerate(symbols)}
-            print("WRITING TYPE MAP TO type_map.json")
-            with open("type_map.json", "w") as file:
+            type_map = dict(enumerate(symbols))
+            print(f"WRITING TYPE MAP TO {tm_path}")
+            with open(tm_path, "w") as file:
                 file.write(json.dumps(type_map, indent=2))
 
         print("TYPES:")
