@@ -2,6 +2,18 @@ from dptools.cli import BaseCLI
 from dptools.utils import Converter
 
 class CLI(BaseCLI):
+    """
+    Convert between structure ASE/VASP/LAMMPS file types.
+
+    Complete documentation: https://dptools.rtfd.io/en/latest/commands/convert.html
+
+    Examples:
+        $ dptools convert thing.cif thing.traj
+        $ dptools convert md_000/vasprun.xml md_001/vasprun.xml full_md.traj
+        $ dptools convert md_???/vasprun.xml full_md.traj # equivalent to above
+        $ dptools convert -i ::10 vasprun.xml condensed_traj.traj
+    """
+
     help_info = "Convert between structure file types (e.g., .xml to .db)"
     def add_args(self):
         self.parser.add_argument(

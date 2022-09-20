@@ -5,6 +5,18 @@ from dptools.cli import BaseCLI
 from dptools.train.parity import EvaluateDeepMD
 
 class CLI(BaseCLI):
+    """
+    Generate parity plots comparing DP model accuracy for energy and force
+    (and stress if available) predictions with ab-initio values.
+
+    Complete documentation: https://dptools.rtfd.io/en/latest/commands/parity.html
+
+    Examples:
+        $ dptools parity
+        $ dptools parity /path/to/dataset/system*/test/set*
+        $ dptools parity -m ../old_graph.pb test_set.traj
+        $ dptools parity -l mae
+    """
     help_info = "Generate energy and force (and stress if available) prediction parity plots for DP model"
     def add_args(self):
         # TODO: add more optional args (e.g. save plot)
@@ -24,6 +36,13 @@ class CLI(BaseCLI):
 
     @staticmethod
     def read_systems():
+        """
+        Load test sets from system paths in in.json training parameter file.
+
+        Returns:
+            list of str: Paths to system test sets found in training json file.
+        """
+
         if "out.json" not in os.listdir() and "in.json" not in os.listdir():
             raise FileNotFoundError("Systems not specified and no in.json in $PWD")
         in_file = "in.json" if "in.json" in os.listdir() else "out.json"

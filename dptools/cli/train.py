@@ -57,6 +57,12 @@ class CLI(BaseCLI):
         self.submit_jobs()
 
     def setup(self):
+        """
+        Loads training parameter json file, updates with relevant info
+        (random seeds, training/validation dirs, type map), and writes to
+        training dir.
+        """
+
         with open(self._json, "r") as file:
             in_json = json.loads(file.read())
         for d in self.dirs:
@@ -67,12 +73,26 @@ class CLI(BaseCLI):
 
     @staticmethod
     def write_json(src, dest):
+        """
+        Writes training parameter json file to specified training directory.
+
+        Args:
+            src (dict): jsonnable dictionary with deepmd-kit training parameters.
+            dest (str): Path to training directory to write .json file to
+        """
         os.makedirs(dest, exist_ok=True)
         file_path = os.path.join(dest, "in.json")
         with open(file_path, "w") as file:
             file.write(json.dumps(src, indent=4))
 
     def link_dirs(self, in_json):
+        """
+        Find and add all system training and validation set folders found in dataset
+        directory to in_json.
+
+        Args:
+            in_json (dict): jsonnable dictionary with deepmd-kit training parameters.
+        """
         possible_dirs = sorted(glob.glob(f"{self.datapath}/*"))
         dirs = [d for d in possible_dirs if self._check_dir(d)]
         train = [os.path.join(d, "train") for d in dirs]
@@ -82,6 +102,12 @@ class CLI(BaseCLI):
         return in_json
 
     def set_types(self, in_json):
+        """
+        Load type_map.json from dataset directory and add types to in_json.
+
+        Args:
+            in_json (dict): jsonnable dictionary with deepmd-kit training parameters.
+        """
         if not hasattr(self, "types"): # only need to read type_map once
             type_map_path = os.path.join(self.datapath, "type_map.json")
             with open(type_map_path, "r") as file:
@@ -92,14 +118,26 @@ class CLI(BaseCLI):
         return in_json
 
     @staticmethod
-    def _check_dir(d):
-        if not os.path.isdir(d):
+    def _check_dir(directory):
+        """
+        Checks if directory is part of the training dataset or not.
+
+        Args:
+            directory (str): Path to directory to check.
+
+        Returns:
+            bool: True if directory contains training/validation data, else False.
+        """
+        if not os.path.isdir(directory):
             return False
-        check1 = "train" in os.listdir(d)
-        check2 = "validation" in os.listdir(d)
+        check1 = "train" in os.listdir(directory)
+        check2 = "validation" in os.listdir(directory)
         return check1 and check2
 
     def submit_jobs(self):
+        """
+        Write and submit Slurm job(s) to train model or ensemble of models.
+        """
         from dptools.env import get_dpfaults
         hpc_info = get_dpfaults(key="sbatch")
         sbatch_comment = hpc_info.pop("SBATCH_COMMENT")

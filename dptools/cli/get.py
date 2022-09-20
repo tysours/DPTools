@@ -2,7 +2,14 @@ from dptools.cli import BaseCLI
 from dptools.simulate.parameters import get_parameter_sets, write_yaml
 
 class CLI(BaseCLI):
-    """Get params.yaml for specific simulation type"""
+    """
+    Get params.yaml for specific simulation type.
+
+    Examples:
+        $ dptools get cellopt
+        $ dptools get nvt-md
+        $ dptools get nvt-md.900K # custom simulation params
+    """
     help_info = "Get params.yaml for specific calculation type"
     def add_args(self):
         self.parser.add_argument(
@@ -10,7 +17,7 @@ class CLI(BaseCLI):
             nargs=1,
             type=str,
             help="Calculation type to generate params.yaml file "
-            "(spe, opt, cellopt, nvt-md, npt-md)."
+            "(spe, opt, cellopt, nvt-md, npt-md, eos, vib)."
             "\nCan also specify label of saved calculations (e.g. nvt-md.label)",
         )
 

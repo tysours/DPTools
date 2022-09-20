@@ -6,6 +6,17 @@ from dptools.hpc import hpc_defaults
 # TODO: Add reset params or reset {calculation_type} (e.g. nvt-md) in case
 #       user screws up parameter_sets.yaml (also prevent this from happening)
 class CLI(BaseCLI):
+    """
+    Reset models or sbatch parameters for environments made using ``dptools set ...``.
+
+    Complete documentation: https://dptools.rtfd.io/en/latest/commands/reset.html
+
+    Examples:
+        $ dptools reset all
+        $ dptools reset -m water all
+        $ dptools reset sbatch
+    """
+
     help_info = "Reset model or sbatch params for default or labeled dptools env"
     def add_args(self):
         self.parser.add_argument(

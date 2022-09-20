@@ -1,14 +1,26 @@
-from ase.io import read, write
-import numpy as np
 import os
+import numpy as np
+from ase.io import write
 
 from dptools.train.ensemble import SampleConfigs
 from dptools.cli import BaseCLI
 from dptools.utils import graph2typemap, read_type_map
 
 class CLI(BaseCLI):
+    """
+    Intelligently select new training configurations using an ensemble of models
+    and the approach described in DP-GEN (DOI: 10.1016/j.cpc.2020.107206).
+
+    Complete documentation: https://dptools.rtfd.io/en/latest/commands/sample.html
+
+    Examples:
+        $ dptools sample -n 200 nvt-md.traj
+        $ dptools sample -n 100 --lo 0.05 --hi 0.25 nvt-md.traj
+        $ dptools sample -m water_ensemble -p npt-md.traj
+    """
     help_info = "Select new training configs from MD traj "\
         "using force prediction deviations from ensemble of DPs"
+
     def add_args(self):
         help="Snapshots from MD simulation to select new training configuraitons from (.traj or similar)"
         self.parser.add_argument(
@@ -68,7 +80,7 @@ class CLI(BaseCLI):
                 # FIXME: Results are overwritten if multiple structure inputs are in the same dir
                 raise Exception("Can't resolve inputs, harass me to fix this")
         self.dirs = dirs
-    
+
     def sample(self, configs, args):
         self.sampler = SampleConfigs(configs, self.ensemble, read_type_map(self.type_map))
         new_configs = self.sampler.sample(lo=args.lo, hi=args.hi, n=args.n)
