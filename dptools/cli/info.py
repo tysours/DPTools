@@ -1,6 +1,6 @@
 import glob
 import re
-from os.path import dirname, join, abspath, basename
+from os.path import dirname, join, abspath
 
 from dptools.cli import BaseCLI
 from dptools.env import get_env, set_custom_env
@@ -8,7 +8,17 @@ from dptools.utils import str2typemap
 
 
 class CLI(BaseCLI):
+    """
+    Display information on set DP models and Slurm parameters.
+
+    https://dptools.rtfd.io/en/latest/commands/info.html
+
+    Examples:
+        dptools info # display all set environments
+        dptools info -m water # display specific labelled environment
+    """
     help_info = "Show loaded DP models and sbatch parameters"
+
     def add_args(self):
         self.parser.add_argument("-m", "--model-label", type=str, default=all,
                 help="Label of specific model to use (see dptools set -h)")
@@ -28,12 +38,21 @@ class CLI(BaseCLI):
             envs = [e for e in envs if e.endswith(args.model_label)]
         self.info = {}
         for env in envs:
-            self.get_info(env)
+            self.set_info(env)
 
         self.summarize()
         
     @staticmethod
     def get_env_name(env_file):
+        """
+        Get corresponding name for .env.* file, e.g. water from .env.water.
+
+        Args:
+            env_file (str): path to .env file to get corresponding label (name).
+
+        Returns:
+            label (str): name of environment that is appended to .env file.
+        """
         pattern = ".env.[a-zA-Z0-9]+"
         if re.search(pattern, env_file):
             label = env_file.split(".")[-1]
@@ -41,7 +60,13 @@ class CLI(BaseCLI):
             label = ""
         return label
 
-    def get_info(self, env_file):
+    def set_info(self, env_file):
+        """
+        Get and set all env key-value info.
+
+        Args:
+            env_file (str): path to .env file to get and set info for.
+        """
         label = self.get_env_name(env_file)
         if label:
             set_custom_env(label)
@@ -50,6 +75,7 @@ class CLI(BaseCLI):
         self.info[label] = get_env()
 
     def summarize(self):
+        """Print out semi-formatted env info."""
         if not self.info:
             print("No info to display, try setting a model using:",
                     "\t dptools set /path/to/graph.pb")
