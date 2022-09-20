@@ -11,18 +11,31 @@ from dptools.env import get_dpfaults, set_custom_env
 
 
 class CLI(BaseCLI):
+    """
+    Run LAMMPS simulations using trained DP models.
+
+    Detailed documentation: https://dptools.rtfd.io/en/latest/commands/run.html
+
+    Examples:
+        dptools run opt start.traj # simple atomic position optimization
+        dptools run cellopt start.traj # simple unit cell optimization
+        dptools run /path/to/params.yaml start.traj # custom param file simulation
+        dptools run -s eos 0*/start.traj # submit slurm job eos simulations on multiple structures
+        dptools run -s -m water nvt-md start.traj # submit slurm nvt-md run using set water model
+    """
     help_info = "Run simulation using trained DP model "\
             "(USE COMMAND 'dptools set path/to/graph.pb' first)"
+
     def add_args(self):
         self.parser.add_argument(
             "calculation",
             type=str,
-            help="Type of calculation to run (spe, opt, cellopt, nvt-md, npt-md, or params.yaml)",
-            #choices=[k for k in Simulations.keys()] + ["path/to/params.yaml"], # messier than help comment IMO
+            help="Type of calculation to run "\
+                    "(spe, opt, cellopt, nvt-md, npt-md, eos, vib, or params.yaml)",
         )
-        self.parser.add_argument(   
+        self.parser.add_argument(
             "structure",
-            nargs="+",    # TODO: Add support for multiple structure inputs
+            nargs="+",
             help="File containing structure to run calculation on (.traj, .xyz, .cif, etc.)"
         )
         self.parser.add_argument("-m", "--model-label", type=str, default=None,
@@ -41,7 +54,7 @@ class CLI(BaseCLI):
         self.set_params(args.calculation)
         self.set_structures(args.structure)
         if args.output == "{calculation}.traj": # replace default placeholder name
-            args.output = f"{self.calc_type}.traj" 
+            args.output = f"{self.calc_type}.traj"
         self.file_out = args.output
 
         if args.submit:
@@ -52,6 +65,16 @@ class CLI(BaseCLI):
             self.run()
 
     def set_params(self, calc_arg):
+        """
+        Set simulation parameters either from simulation keyword or params.yaml file.
+
+        Note:
+            If using parameter file, you must at least retain the .yaml extension.
+
+        Args:
+            calc_arg (str): simulation keyword (e.g. `opt`) or path to params.yaml file.
+        """
+
         if calc_arg.endswith(".yaml"):
             calc_arg = os.path.abspath(calc_arg)
             with open(calc_arg) as file:
@@ -62,8 +85,14 @@ class CLI(BaseCLI):
         self.calc_type = params.pop("type").split(".")[0]
         self.params = params
         self.calc_arg = calc_arg # needed for rewriting dptools command in job submission script
-    
+
     def set_model(self, model_label):
+        """
+        Load specific model (if model_label is not None) and set corresponding graph and type_map.
+
+        Args:
+            model_label (str or None): Label of specific model environment to load.
+        """
         # NOTE: NEED TO SET THE LABEL BEFORE CALLING get_dpfaults
         #  Also, I suppose it's not really get_dpfaults if it can load custom envs
         if model_label:
@@ -72,6 +101,16 @@ class CLI(BaseCLI):
         self._label = model_label # need for submit_jobs()
 
     def set_structures(self, structures):
+        """
+        Read and set structure inputs as ase.Atoms objects and set corresponding dirs.
+        Only reads last index unless calc_type == spe, in which case single points are ran
+        on all images of structure file.
+
+        Args:
+            structures (list of str): Paths to structure inputs to run simulations
+                on (.traj, .xyz, .cif, etc.).
+        """
+
         index = -1
         self.structures = [os.path.abspath(s) for s in structures]
         if len(structures) == 1:
@@ -88,6 +127,13 @@ class CLI(BaseCLI):
         self.dirs = dirs
 
     def submit_jobs(self, sub=True):
+        """
+        Setup and (optionally) submit slurm jobs on all structure inputs.
+
+        Args:
+            sub (bool, optional): Submits slurm jobs if True, else only writes
+                input files without submitting.
+        """
         from dptools.hpc import SlurmJob
         hpc_info = get_dpfaults(key="sbatch")
         sbatch_comment = hpc_info.pop("SBATCH_COMMENT")
@@ -106,11 +152,14 @@ class CLI(BaseCLI):
         jobs.write(sub=sub)
 
     def run(self):
+        """
+        Sequentially setup and run simulations on all structure inputs.
+        """
         wd = os.getcwd()
         for atoms, d in zip(self.atoms, self.dirs):
             os.chdir(d)
             sim = Simulations[self.calc_type](
-                    atoms, 
+                    atoms,
                     self.graph,
                     type_map=read_type_map(self.type_map),
                     file_out=self.file_out,

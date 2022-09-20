@@ -5,6 +5,17 @@ from dptools.train.input import DeepInputs
 
 
 class CLI(BaseCLI):
+    """
+    Create deepmd-kit training set folder from ASE .db, .traj, or vasprun.xml files.
+
+    Complete documentaion: https://dptools.rtfd.io/en/latest/commands/input.html
+
+    examples:
+        dptools input 00_system1.db 00_system2.db
+        dptools input 0*_sys*.db # equivalent to above
+        dptools input 00_system1/vasprun.xml 00_system2/vasprun.xml
+        dptools input -p /path/to/dataset/folder 0*.db
+    """
     help_info = "Set up deepmd-kit training input from ASE .db files"
     def add_args(self):
         self.parser.add_argument("dbs", nargs='+', metavar="db", help="ASE .db files")
