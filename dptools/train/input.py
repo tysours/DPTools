@@ -3,13 +3,14 @@ import glob
 import json
 import numpy as np
 from ase.db import connect
+from ase.io import read
 from ase.io.formats import string2index
 from sklearn.utils import shuffle
 
 
 class DeepInput:
-    def __init__(self, db_name, atoms=None, system_name=None, type_map=None, n=None, path="./data"):
-        self.db_name = db_name
+    def __init__(self, atoms_file, atoms=None, system_name=None, type_map=None, n=None, path="./data"):
+        self.atoms_file = atoms_file
         if atoms is not None:
             self.atoms = atoms
         self.system_name = system_name
@@ -25,14 +26,25 @@ class DeepInput:
         forces = []
         box = []
         n = self.n
-        with connect(self.db_name) as db:
-            for row in db.select():
+
+        if self.atoms_file.endswith(".db"):
+            with connect(self.atoms_file) as db:
+                for row in db.select():
+                    if not hasattr(self, 'atoms'):
+                        self.atoms = row.toatoms() # saving for atom typing
+                    positions.append(row.positions.flatten())
+                    forces.append(row.forces.flatten())
+                    energies.append(row.energy)
+                    box.append(row.cell.flatten())
+        else:
+            all_atoms = read(self.atoms_file, index=":")
+            for atoms in all_atoms:
                 if not hasattr(self, 'atoms'):
-                    self.atoms = row.toatoms() # saving for atom typing
-                positions.append(row.positions.flatten())
-                forces.append(row.forces.flatten())
-                energies.append(row.energy)
-                box.append(row.cell.flatten())
+                    self.atoms = atoms.copy() # saving for atom typing
+                positions.append(atoms.positions.flatten())
+                forces.append(atoms.get_forces().flatten())
+                energies.append(atoms.get_potential_energy())
+                box.append(atoms.cell.array.flatten())
 
         positions = np.array(positions)
         forces = np.array(forces)
@@ -53,7 +65,7 @@ class DeepInput:
 
     def write_input(self):
         if self.system_name is None:
-            system_name = self.db_name.split('/')[-1].split('.db')[0]
+            system_name = self.atoms_file.split('/')[-1].split('.')[0]
         else:
             system_name = self.system_name
         data_path = os.path.join(self.path, system_name)
@@ -67,7 +79,7 @@ class DeepInput:
         if n_val - n_train < 10: # need min of 10 for validation set
             n_train = n_val - 10
             if n_train < 1:
-                raise ValueError(f"Need more images in {self.db_name}, \
+                raise ValueError(f"Need more images in {self.atoms_file}, \
                         {len(self.energies)} entries")
 
         self.write_types()
@@ -169,17 +181,20 @@ class DeepInputs:
     def get_atoms(self, db_names):
         atoms = []
         for dbn in db_names:
-            with connect(dbn) as db:
-                for row in db.select():
-                    atoms.append(row.toatoms())
-                    break
+            if dbn.endswith(".db"):
+                with connect(dbn) as db:
+                    for row in db.select():
+                        atoms.append(row.toatoms())
+                        break
+            else:
+                atoms.append(read(dbn, index="0"))
         return atoms
 
     def get_type_map(self, atoms):
         # TODO: put the print stuff in the cli section?
         tm_path = os.path.join(self.path, "type_map.json")
         if "type_map.json" in os.listdir(self.path):
-            print("READING type_map.json")
+            print(f"READING {tm_path}")
             with open(tm_path, "r") as file:
                 type_map = json.loads(file.read())
             type_map = {int(i): s for i, s in type_map.items()}
@@ -197,5 +212,6 @@ class DeepInputs:
         print("TYPES:")
         for i, t in type_map.items():
             print(f"\t{i}\t{t}")
+        print("If unhappy with the above type ordering, edit type_map.json to your liking and rerun!")
 
         return type_map
