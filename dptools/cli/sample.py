@@ -5,6 +5,7 @@ from ase.io import write
 from dptools.train.ensemble import SampleConfigs
 from dptools.cli import BaseCLI
 from dptools.utils import graph2typemap, read_type_map
+from dptools.env import set_custom_env, get_dpfaults
 
 class CLI(BaseCLI):
     """
@@ -22,11 +23,11 @@ class CLI(BaseCLI):
         "using force prediction deviations from ensemble of DPs"
 
     def add_args(self):
-        help="Snapshots from MD simulation to select new training configuraitons from (.traj or similar)"
         self.parser.add_argument(
             "configurations",
             nargs="+",
-            help=help
+            help="Snapshots from MD simulation to select new training configuraitons "\
+                "from (.traj or similar)"
         )
         self.parser.add_argument("-m", "--model-ensemble", nargs="+", type=str,
                 help="Paths to ensemble of models or label of set models")
@@ -61,7 +62,6 @@ class CLI(BaseCLI):
 
     def load_ensemble(self, ensemble):
         if not ensemble or len(ensemble) == 1:
-            from dptools.env import set_custom_env, get_dpfaults
             if ensemble is not None and len(ensemble) == 1:
                 set_custom_env(ensemble[0])
             defaults = get_dpfaults(key="ensemble")
@@ -91,7 +91,8 @@ class CLI(BaseCLI):
     def plot(self):
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots(figsize=(5.5, 4))
-        for dev, dir in zip(self.devs, self.dirs):
-            ax = self.sampler.plot(dev=dev, ax=ax, label=os.path.relpath(dir))
-        ax.legend()
+        for dev, _dir in zip(self.devs, self.dirs):
+            ax = self.sampler.plot(dev=dev, ax=ax, label=os.path.relpath(_dir))
+        if len(self.dirs) > 1:
+            ax.legend()
         plt.show()
