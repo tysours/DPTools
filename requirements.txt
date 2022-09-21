@@ -1,0 +1,4 @@
+ase
+scikit-learn
+python-dotenv
+ruamel.yaml
