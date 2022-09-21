@@ -9,6 +9,24 @@ from sklearn.utils import shuffle
 
 
 class DeepInput:
+    """
+    Class for writing training set compatible with deepmd-kit from ASE/VASP output
+    (.traj, .db, vasprun.xml, etc.).
+
+    Args:
+        atoms_file (str): File containing training set configurations (e.g., .db).
+        atoms (ase.Atoms or None): Optional Atoms object to use for assigning atom types.
+            First image in atoms_file is used if None specified.
+        system_name (str): Descriptive name of atomic system to use as directory name in
+            dataset folder.
+        type_map (dict or None): Dictionary mapping each atomic symbol to corresponding
+            atom type index, optional and alphabetic order if used if None specified.
+            E.g., {'Si': 0, 'O': 1}.
+        n (int): Max number of images to take from atoms_file. All images are randomly
+            shuffled and then n are taken for training.
+        path (str): Path to dataset parent folder, makes folder if doesn't already exist.
+    """
+
     def __init__(self, atoms_file, atoms=None, system_name=None, type_map=None, n=None, path="./data"):
         self.atoms_file = atoms_file
         if atoms is not None:
@@ -30,7 +48,7 @@ class DeepInput:
         if self.atoms_file.endswith(".db"):
             with connect(self.atoms_file) as db:
                 for row in db.select():
-                    if not hasattr(self, 'atoms'):
+                    if not hasattr(self, "atoms"):
                         self.atoms = row.toatoms() # saving for atom typing
                     positions.append(row.positions.flatten())
                     forces.append(row.forces.flatten())
@@ -39,7 +57,7 @@ class DeepInput:
         else:
             all_atoms = read(self.atoms_file, index=":")
             for atoms in all_atoms:
-                if not hasattr(self, 'atoms'):
+                if not hasattr(self, "atoms"):
                     self.atoms = atoms.copy() # saving for atom typing
                 positions.append(atoms.positions.flatten())
                 forces.append(atoms.get_forces().flatten())
@@ -65,7 +83,7 @@ class DeepInput:
 
     def write_input(self):
         if self.system_name is None:
-            system_name = self.atoms_file.split('/')[-1].split('.')[0]
+            system_name = self.atoms_file.split("/")[-1].split(".")[0]
         else:
             system_name = self.system_name
         data_path = os.path.join(self.path, system_name)
@@ -114,6 +132,25 @@ class DeepInput:
 
 
 class DeepInputs:
+    """
+    Class for writing training set compatible with deepmd-kit from multiple ASE/VASP outputs
+    (.traj, .db, vasprun.xml, etc.).
+
+    Args:
+        db_names (str): File containing training set configurations (e.g., .db, .traj).
+            TODO: update variable name to something more generic
+        atoms (ase.Atoms or None): Optional Atoms object to use for assigning atom types.
+            First image in atoms_file is used if None specified.
+        system_names (list[str]): Descriptive name of atomic systems to use as directory names in
+            dataset folder. Each name should be descriptive (e.g. '00_sodalite_10h2o') and unique
+            for each db_names item, i.e., len(system_names) must equal len(db_names)
+        type_map (dict or None): Dictionary mapping each atomic symbol to corresponding
+            atom type index, optional and alphabetic order if used if None specified.
+            E.g., {'Si': 0, 'O': 1}.
+        n (int): Max number of images to take from atoms_file. All images are randomly
+            shuffled and then n are taken for training.
+        path (str): Path to dataset parent folder, makes folder if doesn't already exist.
+    """
 
     def __init__(self,
                  db_names,
@@ -142,6 +179,8 @@ class DeepInputs:
         if in_json is None:
             default_path = os.path.abspath(os.path.dirname(__file__))
             in_json = os.path.join(default_path, "in.json")
+
+        self._check_names(db_names, system_names)
 
         self.type_map = type_map
         self._json_file = in_json
@@ -178,6 +217,22 @@ class DeepInputs:
         with open("in.json", "w") as file:
             file.write(json_str)
 
+    @staticmethod
+    def _check_names(input_files, system_names):
+        raise_ = False
+        n_in, n_sys, n_unique = len(input_files), len(system_names), len(np.unique(system_names))
+        check1 = n_in != n_sys
+        check2 = None not in system_names and n_unique != n_sys
+        if check1 or check2:
+            raise_ = True
+            if check1:
+                err = f"{n_sys} system_names provided for {n_in} input files"
+            else:
+                err = "Duplicate names detected in system_names, need all unique"
+        if raise_:
+            raise ValueError(err)
+
+
     def get_atoms(self, db_names):
         atoms = []
         for dbn in db_names:
@@ -191,7 +246,18 @@ class DeepInputs:
         return atoms
 
     def get_type_map(self, atoms):
-        # TODO: put the print stuff in the cli section?
+        """
+        Check Atoms object from all systems for unique symbols, and then
+        assigns type_map in alphabetical order.
+
+        Args:
+            atoms (list[ase.Atoms]): List of example Atoms object from all systems
+                that will be used for training (e.g. the first image from all vasprun inputs).
+
+        Returns:
+            type_map (dict): Dictionary mapping each atom type index to atomic symbol in
+                alphabetical order.
+        """
         tm_path = os.path.join(self.path, "type_map.json")
         if "type_map.json" in os.listdir(self.path):
             print(f"READING {tm_path}")
@@ -212,6 +278,6 @@ class DeepInputs:
         print("TYPES:")
         for i, t in type_map.items():
             print(f"\t{i}\t{t}")
-        print("If unhappy with the above type ordering, edit type_map.json to your liking and rerun!")
+        print("If unhappy with above type ordering, edit type_map.json to your liking and rerun!")
 
         return type_map
