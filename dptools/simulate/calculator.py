@@ -1,34 +1,33 @@
 import numpy as np
-import lammps
-from dptools.simulate.lammps_io import LammpsInput
-from ase.calculators.calculator import (
-    Calculator, all_changes, PropertyNotImplementedError
-)
+from ase.calculators.calculator import Calculator, all_changes
 from ase.units import GPa
+
+from dptools.simulate.lammps_io import LammpsInput
 #from dptools.utils import graph2typemap
 
 class LmpCalc(Calculator):
     """
-    Base class for lammps ASE calculator
+    Base class for lammps ASE calculator.
     """
 
     name = "Lammps"
     implemented_properties = ["energy", "forces", "stress"]
 
-    def __init__(self, 
+    def __init__(self,
                  type_map=None,
-                 minimize=False, 
+                 minimize=False,
                  relax_UC=False,
                  ftol=1e-3,
-                 lmp=None, 
-                 run_command=None, 
-                 verbose=False, 
-                 label="lamp", 
+                 lmp=None,
+                 run_command=None,
+                 verbose=False,
+                 label="lamp",
                  **kwargs):
 
         Calculator.__init__(self, label=label, **kwargs)
 
         if lmp is None:
+            import lammps
             if verbose:
                 lmp = lammps.lammps()
             else:
@@ -53,20 +52,20 @@ class LmpCalc(Calculator):
         self.ftol = ftol
         self.run_command = run_command
 
-    def calculate(self, 
-                  atoms=None, 
-                  update=True,
+    def calculate(self,
+                  atoms=None,
                   properties=["energy", "forces", "stress"],
-                  system_changes=all_changes):
+                  system_changes=all_changes,
+                  update=True,
+                  ):
         """
-        Parameters
-        ----------
-        atoms : Optional[Atoms], optional
-            atoms object to run the calculation on, by default None
-        properties : List[str], optional
-            unused, only for function signature compatibility,
-        system_changes : List[str], optional
-            unused, only for function signature compatibility, by default all_changes
+        Run lammps calculation on.
+
+        Args:
+            atoms (ase.Atoms, optional): Atoms object to run the calculation on.
+            properties (list[str]): unused, only for function signature compatibility,
+            system_changes (list[str]): unused, only for function signature compatibility
+            update (bool): Update atoms with new positions, energy, forces, etc. if True.
         """
         if atoms is not None:
             self.atoms = atoms.copy()
@@ -91,6 +90,10 @@ class LmpCalc(Calculator):
             self.results["stress"] = stress
 
     def update_atoms(self, atoms):
+        """
+        Update positions of atoms and shift to origin if necessary after running calculation
+        (i.e. align lammps positions with ASE unit cell).
+        """
         positions = self.lmp.numpy.extract_atom("x")[self._sort]
         # shift positions to align with cell at origin
         shift = np.array([self.lmp.get_thermo(l) for l in ["xlo", "ylo", "zlo"]])
@@ -122,38 +125,65 @@ class LmpCalc(Calculator):
 
 
 class DeepMD(LmpCalc):
+    """
+    ASE calculator to interface with LAMMPS and DeePMD-kit.
+
+    Args:
+        graph (str): Path to deepmd-kit .pb file with saved MLP model.
+
+        type_map (dict): Dictionary of atom type mapping for graph. Should be able
+            to infer automatically from graph, but for some reason (related to deepmd's tensorflow
+            version, I think) lammps crashes if DeepPotential is imported before running.
+            In short, type_map is not optional until that issue is resolved.
+
+        minimize (bool): Run lammps geometry optimizaiton. Shortcut to be used instead of
+            entering the minimize commands in run_command.
+
+        relax_UC (bool): Run lammps unit cell optimization. Shortcut to be used instead of
+            entering the box/relax fix and minimize commands in run_command.
+
+        ftol (float): Force tolerance for lammps minimize convergence, only used if minimize
+            or relax_UC are set to True.
+
+        lmp (lammps.core.lammps): lammps instance (from lmp = lammps.lammps()).
+            Creates new instance if None specified.
+
+        run_command (list[str] or str): lammps commands to run simulation beyond the
+            general setup commands obtained from lammps_io.LammpsInput
+
+        verbose (bool): Display lammps output in console if True.
+    """
     name = "DP"
     implemented_properties = ["energy", "forces", "stress"]
-    def __init__(self, 
+    def __init__(self,
                  graph,
                  type_map=None,
-                 minimize=False, 
+                 minimize=False,
                  relax_UC=False,
                  ftol=1e-3,
-                 lmp=None, 
-                 run_command=None, 
-                 verbose=False, 
-                 label="lamp", 
+                 lmp=None,
+                 run_command=None,
+                 verbose=False,
+                 label="lamp",
                  **kwargs):
 
         super().__init__(
                        type_map=type_map,
-                       minimize=minimize, 
+                       minimize=minimize,
                        relax_UC=relax_UC,
                        ftol=ftol,
-                       lmp=lmp, 
-                       run_command=run_command, 
-                       verbose=verbose, 
-                       label=label, 
+                       lmp=lmp,
+                       run_command=run_command,
+                       verbose=verbose,
+                       label=label,
                        **kwargs
                        )
 
         self.graph = graph
-        self.style = f'deepmd {self.graph}'
+        self.style = f"deepmd {self.graph}"
 
     def set_atoms(self, atoms=None):
         self.set_types(atoms)
-        #if 0 in atoms.get_tags():
         for a in atoms:
             a.tag = self._type_map[a.symbol]
 
@@ -164,7 +194,7 @@ class DeepMD(LmpCalc):
         if atoms is None:
             atoms = self.atoms
 
-        if not hasattr(self, '_type_map'):
+        if not hasattr(self, "_type_map"):
             raise NotImplementedError("Automatic detection of type_map not working, "
                         "please manually specify type_map")
 
@@ -182,7 +212,7 @@ class DeepMD(LmpCalc):
         #    a.tag = self._type_map[a.symbol]
 
         # need to invert dict for lammps_io - a bit confusing, probably rework
-        self.types = {v: k for k, v in self._type_map.items()} 
+        self.types = {v: k for k, v in self._type_map.items()}
 
     def set_coeffs(self):
         self.coeffs = None
@@ -195,8 +225,8 @@ class DeepMD(LmpCalc):
         self.set_atoms(atoms)
         self.set_charges()
         self.set_coeffs()
-        self.io = LammpsInput(self.atoms, 
-                              self.types, 
+        self.io = LammpsInput(self.atoms,
+                              self.types,
                               charges=self.charges,
                               pair_style=self.style,
                               pair_coeff=self.pair_coeffs,
@@ -209,39 +239,42 @@ class DeepMD(LmpCalc):
                 file.write(f"{comm}\n")
 
 
+DeePMD = DeepMD # I realized after a year that deepmd-kit capitalizes the P, oops
+
+
 class ClayFF(LmpCalc):
-    """class for the classical ClayFF force field. Unused for deepmd but I will leave it here for future reference"""
+    """Class for the classical ClayFF force field. Unused for deepmd but I will leave it here for future reference"""
     name = "ClayFF"
     implemented_properties = ["energy", "forces", "stress"]
-    def __init__(self, 
+    def __init__(self,
                  type_map=None,
-                 minimize=False, 
+                 minimize=False,
                  relax_UC=False,
                  ftol=1e-3,
-                 lmp=None, 
-                 run_command=None, 
-                 verbose=False, 
-                 label="lamp", 
+                 lmp=None,
+                 run_command=None,
+                 verbose=False,
+                 label="lamp",
                  cutoff=12.0,
                  **kwargs):
 
         super().__init__(
                        type_map=type_map,
-                       minimize=minimize, 
+                       minimize=minimize,
                        relax_UC=relax_UC,
                        ftol=ftol,
-                       lmp=lmp, 
-                       run_command=run_command, 
-                       verbose=verbose, 
-                       label=label, 
+                       lmp=lmp,
+                       run_command=run_command,
+                       verbose=verbose,
+                       label=label,
                        **kwargs
                        )
 
         self.rc = cutoff
-        self.style = f'lj/cut/coul/long {self.rc}'
+        self.style = f"lj/cut/coul/long {self.rc}"
 
     def set_atoms(self, atoms=None):
-        if not hasattr(self, '_type_map'):
+        if not hasattr(self, "_type_map"):
             self.set_types(atoms)
         if 0 in atoms.get_tags():
             for a in atoms:
@@ -251,12 +284,12 @@ class ClayFF(LmpCalc):
         #if hasattr(self, 'repeat'):
         #    if repeat != self.repeat:
         #        raise Exception("REPEAT CHANGED, FIX IT OR FIX LOSS FCN")
-        #self.repeat = repeat 
+        #self.repeat = repeat
         #atoms = atoms.repeat(self.repeat)
         #self.atoms = atoms
 
     def set_charges(self):
-        q_vals = {'Si': 2.1, 'O': -1.05}
+        q_vals = {"Si": 2.1, "O": -1.05}
         charges = [q_vals[a.symbol] for a in self.atoms]
         self.charges = np.array(charges)
 
@@ -271,9 +304,9 @@ class ClayFF(LmpCalc):
         self.types = {v: k for k, v in types.items()} # inverting dict, probably stupid
 
     def set_coeffs(self):
-        epsilon = {'Si': 7.981163385703463e-08, 'O': 0.006738781799175867}
-        sigma = {'Si': 3.302027, 'O': 3.165541}
-        self.coeffs = {k: {'eps': epsilon[v], 'sig': sigma[v]}
+        epsilon = {"Si": 7.981163385703463e-08, "O": 0.006738781799175867}
+        sigma = {"Si": 3.302027, "O": 3.165541}
+        self.coeffs = {k: {"eps": epsilon[v], "sig": sigma[v]}
                         for k, v in self.types.items()}
 
     def write_input(self, atoms=None):
@@ -283,8 +316,8 @@ class ClayFF(LmpCalc):
         self.set_atoms(atoms)
         self.set_charges()
         self.set_coeffs()
-        self.io = LammpsInput(self.atoms, 
-                              self.types, 
+        self.io = LammpsInput(self.atoms,
+                              self.types,
                               charges=self.charges,
                               pair_style=self.style,
                               coeffs=self.coeffs,
@@ -292,53 +325,51 @@ class ClayFF(LmpCalc):
 
         self.io.write_atoms(self.atoms)
         self.io.write_input()
-        self.lmp.command('clear')
-        self.lmp.file('in.atoms')
+        self.lmp.command("clear")
+        self.lmp.file("in.atoms")
         if self.relax_UC:
-            self.lmp.command('fix 1 all box/relax tri 1.0')
+            self.lmp.command("fix 1 all box/relax tri 1.0")
 
     def _check_cell(self):
-        '''Checks if lattice constants are > 2 * cutoff'''
+        """Checks if lattice constants are > 2 * cutoff"""
         min_lc = min(self.atoms.cell.lengths())
         if min_lc < 2 * self.rc:
             raise Exception("Lattice constant < 2 * cutoff\nRepeat Atoms or decrease cutoff")
-        return
 
 
 class BKS(LmpCalc):
-    """class for the classical BKS force field. Unused for deepmd but I will leave it here for future reference"""
-    #raise 
+    """Class for the classical BKS force field. Unused for deepmd but I will leave it here for future reference"""
     name = "BKS"
     implemented_properties = ["energy", "forces", "stress"]
-    def __init__(self, 
+    def __init__(self,
                  type_map=None,
-                 minimize=False, 
+                 minimize=False,
                  relax_UC=False,
                  ftol=1e-3,
-                 lmp=None, 
-                 run_command=None, 
-                 verbose=False, 
-                 label="lamp", 
+                 lmp=None,
+                 run_command=None,
+                 verbose=False,
+                 label="lamp",
                  cutoff=12.0,
                  **kwargs):
 
         super().__init__(
                        type_map=type_map,
-                       minimize=minimize, 
+                       minimize=minimize,
                        relax_UC=relax_UC,
                        ftol=ftol,
-                       lmp=lmp, 
-                       run_command=run_command, 
-                       verbose=verbose, 
-                       label=label, 
+                       lmp=lmp,
+                       run_command=run_command,
+                       verbose=verbose,
+                       label=label,
                        **kwargs
                        )
 
         self.rc = cutoff
-        self.style = f'buck/coul/long {self.rc}'
+        self.style = f"buck/coul/long {self.rc}"
 
     def set_atoms(self, atoms=None):
-        if not hasattr(self, '_type_map'):
+        if not hasattr(self, "_type_map"):
             self.set_types(atoms)
         if 0 in atoms.get_tags():
             for a in atoms:
@@ -348,12 +379,12 @@ class BKS(LmpCalc):
         #if hasattr(self, 'repeat'):
         #    if repeat != self.repeat:
         #        raise Exception("REPEAT CHANGED, FIX IT OR FIX LOSS FCN")
-        #self.repeat = repeat 
+        #self.repeat = repeat
         #atoms = atoms.repeat(self.repeat)
         #self.atoms = atoms
 
     def set_charges(self):
-        q_vals = {'Si': 2.4, 'O': -1.2}
+        q_vals = {"Si": 2.4, "O": -1.2}
         charges = [q_vals[a.symbol] for a in self.atoms]
         self.charges = np.array(charges)
 
@@ -370,13 +401,13 @@ class BKS(LmpCalc):
     def set_coeffs(self):
         self.coeffs = None
 
-        Aij = {'Si-O': 18003.7572, 'O-O': 1388.7730, 'Si-Si': 0.0}
-        bij = {'Si-O': 1 / 4.87318, 'O-O': 1 / 2.760, 'Si-Si': 1.0}
-        cij = {'Si-O': 133.5381, 'O-O': 175.000, 'Si-Si': 0.0}
+        Aij = {"Si-O": 18003.7572, "O-O": 1388.7730, "Si-Si": 0.0}
+        bij = {"Si-O": 1 / 4.87318, "O-O": 1 / 2.760, "Si-Si": 1.0}
+        cij = {"Si-O": 133.5381, "O-O": 175.000, "Si-Si": 0.0}
 
         pair_coeffs = ""
         for k in Aij:
-            ij = [self._type_map[k.split('-')[0]], self._type_map[k.split('-')[1]]]
+            ij = [self._type_map[k.split("-")[0]], self._type_map[k.split("-")[1]]]
             if ij[0] > ij[1]:
                 ij.reverse()
             pair_coeffs += f"pair_coeff {ij[0]} {ij[1]} {Aij[k]} {bij[k]} {cij[k]}\n"
@@ -391,8 +422,8 @@ class BKS(LmpCalc):
         self.set_atoms(atoms)
         self.set_charges()
         self.set_coeffs()
-        self.io = LammpsInput(self.atoms, 
-                              self.types, 
+        self.io = LammpsInput(self.atoms,
+                              self.types,
                               charges=self.charges,
                               pair_style=self.style,
                               coeffs=self.coeffs,
@@ -401,14 +432,13 @@ class BKS(LmpCalc):
 
         self.io.write_atoms(self.atoms)
         self.io.write_input()
-        self.lmp.command('clear')
-        self.lmp.file('in.atoms')
+        self.lmp.command("clear")
+        self.lmp.file("in.atoms")
         if self.relax_UC:
-            self.lmp.command('fix 1 all box/relax tri 1.0')
+            self.lmp.command("fix 1 all box/relax tri 1.0")
 
     def _check_cell(self):
-        '''Checks if lattice constants are > 2 * cutoff'''
+        """Checks if lattice constants are > 2 * cutoff"""
         min_lc = min(self.atoms.cell.lengths())
         if min_lc < 2 * self.rc:
             raise Exception("Lattice constant < 2 * cutoff\nRepeat Atoms or decrease cutoff")
-        return

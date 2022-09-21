@@ -1,15 +1,17 @@
-import numpy as np
-import os
 import re
+from textwrap import dedent
+import numpy as np
 from ase.data import atomic_masses, atomic_numbers
 from ase.geometry.analysis import Analysis
-from textwrap import dedent
 from ase.calculators.lammpslib import convert_cell
 
 
 class LammpsInput:
     """
-    Creates lammps input files from ASE Atoms object.
+    Creates lammps input files from ASE Atoms object. Works by setting as str attributes
+    all neccessary lammps input information and commands, which are then inserted into
+    the appropriate Template subclass.
+
 
     Args:
         atoms (ase.Atoms): structure used for lammps calculation
@@ -67,6 +69,7 @@ class LammpsInput:
         self.set_lmp_cmd("pair_coeff", pair_coeff)
         self.set_lmp_cmd("bond_coeff", bond_coeff)
         self.set_lmp_cmd("angle_coeff", angle_coeff)
+        self.atom_style_hint = self.atom_style.split()[-1]
 
         if charges is None:
             charges = atoms.get_initial_charges()
@@ -153,12 +156,12 @@ class LammpsInput:
     def write_geometry(self, key):
         """
         Deprecated. Generalized method to write geometry components (bonds, angles,
-        dihedrals, or impropers) to lammps data file and set ajj
+        dihedrals, or impropers) to lammps data file and set quantities
+        (num bonds, bond types, etc.).
 
         Args:
-            atoms (ase.Atoms or None): New atoms object used to write data file
-                (or self.atoms if atoms is None).
-            charges (array-like or None): Optional charges corresponding to atoms.
+            key (str): geometry component to write
+                ('bonds', 'angles', 'dihderals', or 'impropers').
         """
         if getattr(self, f"_{key}"): # e.g.  if self._bonds:
             writer = getattr(self, f"write_{key}") # self.write_bonds()
@@ -169,6 +172,7 @@ class LammpsInput:
             setattr(self, f"n{key[0]}types", 0)
 
     def write_cell(self):
+        """Transform and write self.atoms' ase.cell.Cell to lammps data file."""
         cell = convert_cell(self.atoms.cell)[0]
         self.x = f"0 {cell[0, 0]}"
         self.y = f"0 {cell[1, 1]}"
@@ -177,45 +181,46 @@ class LammpsInput:
         self.xyxzyz = f"{xy} {xz} {yz}"
 
     def write_types(self):
+        """Write Types section in lammps data file (atomic masses for each atom type)."""
         self.ntypes = len(self.type_dict.keys())
 
         types_str = ""
         for k, v in self.type_dict.items():
-            sym = v.split('_')[0]
+            sym = v.split("_")[0]
             mass = atomic_masses[atomic_numbers[sym]]
             types_str += f"{k} {mass} # {v}\n"
 
         self.types = types_str
 
     def write_coords(self):
-        """Writes Coords section (atomic positions) in lammps datafile"""
+        """Write Coords section (atomic positions) in lammps datafile."""
         coords_str = ""
         zeros = np.zeros(self.natoms, dtype=int)
         groups = self.groups if self.groups is not None else zeros
-        for a, g, q, (x, y, z) in zip(self.atoms, 
+        for a, g, q, (x, y, z) in zip(self.atoms,
                                       groups,
-                                      self.charges, 
+                                      self.charges,
                                       self.atoms.positions):
 
             if not self.atom_style or self.atom_style == "atom_style full":
                 coords_str += f" {a.index + 1} {g} {a.tag} {q} {x} {y} {z}\n"
             else:
-                err = f"atom_style {self.atom_style} not supported, harass me for it"
+                err = f"atom_style {self.atom_style} not supported, harass me for it, "\
+                    "but I can't imagine why you'd need it for deepmd."
                 raise NotImplementedError(err)
-                coords_str += f" {a.index + 1} {a.tag} {x} {y} {z}\n"
+                #coords_str += f" {a.index + 1} {a.tag} {x} {y} {z}\n"
 
         self.coords = coords_str
-        return
 
     def write_bonds(self):
         """
-        (Deprecated, may restore) Write all bonds in self.atoms to lammps datafile
+        (Deprecated, may restore) Write all bonds in self.atoms to lammps datafile.
         """
         self.anal = Analysis(self.atoms)
         tags = self.atoms.get_tags()
         bond_types = {}
 
-        def b_str(t1, t2): 
+        def b_str(t1, t2):
             return f"{t1}-{t2}" if t1 < t2 else f"{t2}-{t1}"
 
         for i, bonds in enumerate(self.anal.unique_bonds[0]):
@@ -235,11 +240,11 @@ class LammpsInput:
 
         self.nbonds = n_bond
         self.nbtypes = len(bond_types.keys())
-        self.bonds = bond_str
+        self.bonds = bonds_str
 
     def write_angles(self):
         """
-        (Deprecated, may restore) Write all angles in self.atoms to lammps datafile
+        (Deprecated, may restore) Write all angles in self.atoms to lammps datafile.
         """
         if not hasattr(self, "anal"): # don't recalc if already done in write_bonds()
             self.anal = Analysis(self.atoms)
@@ -256,12 +261,18 @@ class LammpsInput:
                 if a_type in angle_types:
                     angle_types[a_type].append((i, angle))
                 else:
-                    bond_types[b_type] = [(i, bond)]
+                    angle_types[a_type] = [(i, angle)]
 
         raise NotImplementedError("Too lazy to add angles, harass me if you need it")
 
     def _write_geometry(self, key):
-        """Generalized method to write bonds, angles, maybe dihedrals (key)"""
+        """
+        Generalized method to write bonds, angles, maybe dihedrals (untested) to lammps data file.
+        Uses ase.geometry.Analysis to generate list of bonds, angles, etc.
+
+        Args:
+            key (str): Geometry component to write ('bonds', 'angles', 'dihedrals', 'impropers').
+        """
         n = 0
         n_types = 0
         text = ""
@@ -315,6 +326,10 @@ class LammpsInput:
         raise NotImplementedError("Harass me if you need this.")
 
     def write_infile(self):
+        """
+        Write lammps input file containing all general setup commands
+        (e.g. define units, read data file, etc.).
+        """
         if not self.pair_coeff:
             self.pair_coeff = "pair_coeff * *\n"
 
@@ -326,18 +341,34 @@ class LammpsInput:
 
 
 class Template:
+    """
+    Base class for writing lammps data and input files. Replaces all <attr> sections
+    in subclass self.text with corresponding LammpsInput instance attributes that contain
+    strings for each section.
+
+    Args:
+        file_name (str): Name of file to write, generally name.data or in.name.
+        lammps_input (LammpsInput instance): LammpsInput object with str attributes used
+            to fill in self.text with appropriate commands / values.
+    """
     def __init__(self, file_name, lammps_input):
         self.file_name = file_name
         self.input = lammps_input
 
     def write(self):
+        """
+        Write lammps file to current directory.
+        """
         self.fill()
         self.trim()
-        with open(self.file_name, 'w') as file:
+        with open(self.file_name, "w") as file:
             file.write(self.text)
 
     def fill(self):
-        pattern = "<\w+>"
+        """
+        Replaces <attr> sections in self.text with corresponding LammpsInput object attribute text.
+        """
+        pattern = r"<\w+>"
         matches = re.findall(pattern, self.text)
         for match in matches:
             key = match[1:-1]
@@ -346,6 +377,10 @@ class Template:
             self.text = self.text.replace(match, attr)
 
     def trim(self):
+        """
+        Remove unneccessary blank lines from self.text caused by inserting empty strings
+        as commands.
+        """
         while "\n\n\n" in self.text:
             self.text = self.text.replace("\n\n\n", "\n\n")
 
@@ -376,7 +411,7 @@ class DataTemplate(Template):
 
         <types>
 
-        Atoms # <atom_style>
+        Atoms # <atom_style_hint>
 
         <coords>
 
