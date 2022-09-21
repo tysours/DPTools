@@ -89,7 +89,7 @@ class SampleConfigs:
               |----------------------------------------------------------------------------------|
               | Large eps_t might correspond with unphysical (bad) configurations.               |
               | IF YOU USE THESE CONFIGS FOR TRAINING, MAKE SURE YOUR DFT CALCULATION CONVERGES! |
-              | You will regret this if you do not head this warning, trust me.                  |
+              | You will regret this if you do not heed this warning, trust me.                  |
               |__________________________________________________________________________________|
                """ # large obnoxious warning box for emphasis
             print(warn)
@@ -102,6 +102,13 @@ class SampleConfigs:
         return new_configs
 
     def plot(self, dev=None, ax=None, color=None, label=None):
+        """
+        Create kernel density estimation plot (fancy smooth histogram) for
+        all eps_t values in configs input.
+
+        Requires seaborn python package to be installed!
+        https://seaborn.pydata.org
+        """
         import matplotlib.pyplot as plt
         import seaborn as sns
         if dev is None:
