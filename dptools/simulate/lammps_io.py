@@ -9,38 +9,39 @@ from ase.calculators.lammpslib import convert_cell
 
 class LammpsInput:
     """
-    Creates lammps input files from ASE Atoms object
+    Creates lammps input files from ASE Atoms object.
 
-    Parameters
-    ----------
-    atoms: ASE Atoms object, structure used for lammps calculation
+    Args:
+        atoms (ase.Atoms): structure used for lammps calculation
 
-    type_dict: dict, map atom type index to element symbol 
-               (Element_tag to specify multiple types of same element)
-               e.g., {1: 'O', 2: 'Si', 3: 'O_h2o', 4: 'H_h2o'}
+        type_dict (dict): map atom type index to element symbol
+                   (Element_tag to specify multiple types of same element)
+                   e.g., {1: 'O', 2: 'Si', 3: 'O_h2o', 4: 'H_h2o'}
 
-    charges: list, list of charges (float) on each atom 
+        charges (array-like): List or array of charges (float) on each atom.
+            Must have len(charges) == len(atoms).
 
-    bonds: bool, define all bonds in structure data file
-    angles: bool, define all angles in structure data file
-    dihedrals: bool, define all dihedral angles in structure data file
-    impropers: bool, define impropers in structure data file
+        bonds (bool): Define all bonds in structure data file if True.
+        angles (bool): Define all angles in structure data file if True.
+        dihedrals (bool): Define all dihedral angles in structure data file if True.
+        impropers (bool): Define impropers in structure data file if True.
 
-    name: str, name used for creating input files
+        name (str, optional): Name used for creating input files (name.data, in.name).
 
-    atom_style: str, lammps style for atomic positions, groups, etc
-    pair_style: str, lammps pair potential style command
-    bond_style: str, lammps bond style command
-    angle_style: str, lammps angle style command
-    kspace_style: str, lammps kspace style command
+        atom_style (str, optional): lammps style for atomic positions, groups, etc.
+        pair_style (str, optional): lammps pair_style command.
+        bond_style (str, optional): lammps bond_style command.
+        angle_style (str, optional): lammps angle_style command.
+        kspace_style (str, optional): lammps kspace_style command.
 
-    groups: list, list of groups for each atom
+        groups (array-like, optional): List of groups (int) for each atom.
+            Must have len(groups) == len(atoms).
 
-    pair_coeff: list[str], pair_coeff line(s) to define ij interactions
+        pair_coeff (list[str] or str, optional): lammps pair_coeff line(s) to define ij interactions
     """
-        
-    def __init__(self, atoms, type_dict, 
-                 charges=None, 
+
+    def __init__(self, atoms, type_dict,
+                 charges=None,
                  bonds=False,
                  angles=False,
                  dihedrals=False,
@@ -79,6 +80,14 @@ class LammpsInput:
         self.name = name
 
     def set_lmp_cmd(self, command, text):
+        """
+        Set lammps commands that follow the pattern: command args
+
+        Args:
+            command (str): Name of lammps command, e.g., pair_style.
+            text (list[str] or str): Arguments to use with command. If text doesn't
+                lead with command, then command is prepended to text.
+        """
         if isinstance(text, list):
             lines = [self.prepend_command(command, l) for l in text]
             new_text = "\n".join(lines)
@@ -88,15 +97,46 @@ class LammpsInput:
 
     @staticmethod
     def prepend_command(command, text):
+        """
+        Prepend command to corresponding arguments str.
+
+        Args:
+            command (str): Name of lammps command to prepend to text.
+            text (str): lammps arg str corresponding to command.
+
+        Returns:
+            str: Full lammps line with command prepended to text.
+
+        Examples:
+            self.prepend_command('kspace_style', 'pppm 1e-5')
+            'kspace_style pppm 1e-5'
+        """
         if text and not text.startswith(command):
             text = f"{command} {text}"
         return text
 
     def write(self, atoms=None, charges=None):
+        """
+        Writes lammps data file and input file for atoms.
+
+        Args:
+            atoms (ase.Atoms or None): New atoms object used to write data file
+                (or self.atoms if atoms is None).
+            charges (array-like or None): Optional charges corresponding to atoms.
+        """
         self.write_atoms(atoms=atoms, charges=charges)
         self.write_infile()
 
     def write_atoms(self, atoms=None, charges=None):
+        """
+        Write lammps data file from atoms. Writes unit cell info, atom types,
+        atomic positions, and bonds, angles, dihedrals, impropers if specified in __init__().
+
+        Args:
+            atoms (ase.Atoms or None): New atoms object used to write data file
+                (or self.atoms if atoms is None).
+            charges (array-like or None): Optional charges corresponding to atoms.
+        """
         atoms = atoms if atoms is not None else self.atoms
         charges = charges if charges is not None else self.charges
         self.natoms = len(atoms)
@@ -111,6 +151,15 @@ class LammpsInput:
         datatemp.write()
 
     def write_geometry(self, key):
+        """
+        Deprecated. Generalized method to write geometry components (bonds, angles,
+        dihedrals, or impropers) to lammps data file and set ajj
+
+        Args:
+            atoms (ase.Atoms or None): New atoms object used to write data file
+                (or self.atoms if atoms is None).
+            charges (array-like or None): Optional charges corresponding to atoms.
+        """
         if getattr(self, f"_{key}"): # e.g.  if self._bonds:
             writer = getattr(self, f"write_{key}") # self.write_bonds()
             writer()
@@ -220,11 +269,11 @@ class LammpsInput:
             if key in ["dihedrals", "impropers"]:
                 raise NotImplementedError(f"{key} not implemented, harass me if you need it")
 
-            # define order of indices when writing key 
+            # define order of indices when writing key
             # (e.g. angles need central atom in middle, 1-0-2)
             orders = {"bonds": "01", "angles": "102", "dihedrals": "0123"}
             if not hasattr(self, "anal"): # only calc once
-                self.anal = Analysis(self.atoms) # pronounced uh-nahl
+                self.anal = Analysis(self.atoms)
 
             def t_str(order, *t):
                 tsorted = [str(sorted(t)[int(i)]) for i in order]
@@ -249,7 +298,7 @@ class LammpsInput:
             #for i, (typ, groups) in enumerate(types.items()):
             for i, typ in enumerate(sorted(types.keys())):
                 for group in types[typ]:
-                    g_str = "\t".join([str(g + 1) for g in group]) 
+                    g_str = "\t".join([str(g + 1) for g in group])
                     text += f" {n+1}\t{i+1}\t{g_str}\n"
                     n += 1
 
@@ -258,13 +307,14 @@ class LammpsInput:
         setattr(self, f"n{key[0]}types", n_types)
 
     def write_dihedrals(self):
+        """Deprecated before it was even written :("""
         raise NotImplementedError("Too lazy to add dihedrals, harass me if you need it")
-            
-    def write_impropers(self):
-        raise NotImplementedError("I don't even know what this means,"\
-                " but i'll figure it out if you need it")
 
-    def write_infile(self): 
+    def write_impropers(self):
+        """Deprecated before it was even written :("""
+        raise NotImplementedError("Harass me if you need this.")
+
+    def write_infile(self):
         if not self.pair_coeff:
             self.pair_coeff = "pair_coeff * *\n"
 
