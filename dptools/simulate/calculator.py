@@ -101,6 +101,10 @@ class LmpCalc(Calculator):
         atoms.cell = self.read_cell()
 
     def read_stress(self):
+        """
+        Returns:
+            stress (np.array): Stress tensor in Voigt notation.
+        """
         pxx = self.lmp.get_thermo("pxx") * 1e-3 # kBar
         pyy = self.lmp.get_thermo("pyy") * 1e-3
         pzz = self.lmp.get_thermo("pzz") * 1e-3
@@ -111,6 +115,11 @@ class LmpCalc(Calculator):
         return stress
 
     def read_cell(self):
+        """
+        Returns:
+            (list): Cell lengths and angles to use with ASE
+                [a, b, c, alpha, beta, gamma].
+        """
         a = self.lmp.get_thermo("cella")
         b = self.lmp.get_thermo("cellb")
         c = self.lmp.get_thermo("cellc")
@@ -243,7 +252,8 @@ DeePMD = DeepMD # I realized after a year that deepmd-kit capitalizes the P, oop
 
 
 class ClayFF(LmpCalc):
-    """Class for the classical ClayFF force field. Unused for deepmd but I will leave it here for future reference"""
+    # Class for the classical ClayFF force field. Unused for deepmd but I will leave it here
+    # for future reference
     name = "ClayFF"
     implemented_properties = ["energy", "forces", "stress"]
     def __init__(self,
@@ -338,7 +348,8 @@ class ClayFF(LmpCalc):
 
 
 class BKS(LmpCalc):
-    """Class for the classical BKS force field. Unused for deepmd but I will leave it here for future reference"""
+    # Class for the classical BKS force field. Unused for deepmd but I will leave it here
+    # for future reference
     name = "BKS"
     implemented_properties = ["energy", "forces", "stress"]
     def __init__(self,

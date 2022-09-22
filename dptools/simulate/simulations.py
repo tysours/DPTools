@@ -9,6 +9,23 @@ from dptools.utils import get_seed as seed
 
 
 class Simulation:
+    """
+    Base class for setting up, running, and processing specific simulations in LAMMPS
+    using DP models for energy and force evaluations.
+
+    Args:
+        atoms (str, ase.Atoms, or list[ase.Atoms]): Input structure(s) to run
+            simulation with. ase.Atoms object or str with path to .traj (or similar) file.
+
+        graph (str): Path to deepmd model .pb file
+
+        type_map (dict): Dictionary that maps elemental symbol keys to type index values.
+
+        path (str): Path to directory to write results to if dir other than $PWD desired.
+
+        **kwargs: Simulation specific kwargs to pass to setup and get_commands methods.
+    """
+
     def __init__(self, atoms, graph, type_map, file_out="atoms.traj", path="./", **kwargs):
         if isinstance(atoms, str):
             atoms = [read(atoms)]
@@ -22,10 +39,25 @@ class Simulation:
         self.setup(**kwargs)
 
     def setup(self, **kwargs):
-        """Simulation specific method to do any needed setup before running (e.g., cell deformations)"""
+        """
+        Simulation specific method to do any needed setup before running (e.g., cell deformations).
+        Must call self.get_commands() method.
+        """
         self.commands = self.get_commands(**kwargs)
 
     def run(self, process=True, commands=None, file_out=None):
+        """
+        Runs simulation after setting everything up.
+
+        Args:
+            process (bool): If True calls self.process() method after running.
+
+            commands (list[str], optional): List of lammps commands if different from self.commands.
+                Rarely used, should set self.commands in self.setup() generally.
+
+            file_out (optional): Name of output file if different from self.file_out for
+                whatever reason. Also rarely used.
+        """
         commands = commands if commands else self.commands
         for atoms in self.atoms:
             calc = DeepMD(self.graph, type_map=self.type_map, run_command=commands, verbose=True)
@@ -35,11 +67,19 @@ class Simulation:
             self.process(file_out=file_out)
 
     def process(self, file_out=None):
-        """Simulation specific method to process and write results after calculation"""
+        """Simulation specific method to process and write results after calculation."""
         file_out = file_out if file_out else self.file_out
         write(file_out, self.atoms)
 
     def pre_opt(self, nsw, cell=False, ftol=0.01):
+        """
+        Run quick optimization on structure before running full simulation.
+
+        Args:
+            nsw (int): Max number of optimization steps to run.
+            cell (bool): Optimize unit cell if True, else only positions.
+            ftol (float): Max force convergence tolerance criterion.
+        """
         Opts = {0: Opt, 1: CellOpt}
         commands = Opts[cell].get_commands(self, nsw=nsw, ftol=ftol)
 
@@ -54,10 +94,11 @@ class Simulation:
 
     def write_array(self, data):
         name = f"data.{self.calc_type}.npy"
-        np.save(name, data)
+        np.save(os.path.join(self.path, name), data)
 
 
 class SPE(Simulation):
+    """Simple single point energy calculation, not much to it."""
     calc_type = "spe"
 
     def get_commands(self, **kwargs):
@@ -274,9 +315,9 @@ class Vib(Simulation):
         freq *= imag_filt # save imaginary frequencies as negative
 
         self.write_array(freq)
-        
+
         for j, f in enumerate(freq):
-            i = "i" if f < 0 else "" 
+            i = "i" if f < 0 else ""
             print(f"Mode {j}: {abs(f):.2f}{i}")
 
 
