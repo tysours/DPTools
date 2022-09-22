@@ -44,7 +44,7 @@ class CLI(BaseCLI):
             self.set_info(env)
 
         self.summarize()
-        
+
     @staticmethod
     def get_env_name(env_file):
         """
@@ -84,7 +84,7 @@ class CLI(BaseCLI):
                     "\t dptools set /path/to/graph.pb")
         for env, vals in self.info.items():
             print("-" * 64)
-            print(f"{env.upper()} env")
+            print(f"{env} env")
             print()
             self._print_kv(vals, "DPTOOLS_MODEL")
             self._print_kv(vals, "DPTOOLS_MODEL2")
