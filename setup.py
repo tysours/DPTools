@@ -1,26 +1,25 @@
 from dptools import __version__
-from setuptools import setup, find_packages
+from setuptools import setup
+from pathlib import Path
 
 version = __version__
 
-install_requires = [
-    'ase',
-    'scikit-learn', # only needed for shuffle util, maybe write own function to avoid dependency
-    'python-dotenv',
-    'ruamel.yaml'
-]
+HERE = Path(__file__).parent
 
+README = (HERE / "README.md").read_text()
 
-python_requires = ">=3.6"
-package_data = {'dptools': ['simulate/parameter_sets.yaml']}
-#packages = find_packages(where='dptools', include=['*.py'],  # alternatively: `exclude=['additional*']`
-#        ) # TODO: Figure out how to use this
+install_requires = (HERE / 'requirements.txt').read_text().splitlines()
+
+python_requires = '>=3.6' # lots of f-string usage
 
 packages = ['dptools', 'dptools.simulate', 'dptools.cli', 'dptools.train']
+package_data = {'dptools': ['simulate/parameter_sets.yaml', 'train/in.json']}
 
-setup(name='dpmdtools',
+setup(name='dpmdtools', # dptools taken on PyPI :(
       version=version,
-      description='DPTools: CLI toolkit for working with deepmd-kit',
+      description='DPTools: CLI toolkit and python library for working with deepmd-kit.',
+      long_description=README,
+      long_description_content_type='text/markdown',
       url='https://github.com/tysours/DPTools',
       maintainer='Ty Sours',
       maintainer_email='tsours@ucdavis.edu',
