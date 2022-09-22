@@ -1,3 +1,6 @@
+"""
+Module for writing deepmd training sets from ab-initio calculation results.
+"""
 import os
 import glob
 import json

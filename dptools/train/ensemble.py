@@ -1,3 +1,6 @@
+"""
+Module for working with ensembles of DP models.
+"""
 from ase.io import read, write
 import numpy as np
 import random

@@ -1,3 +1,7 @@
+"""
+Module to generate parity plots to compare DP model predictions with corresponding
+*ab-initio* values.
+"""
 import numpy as np
 import matplotlib.pyplot as plt
 import os
@@ -6,6 +10,20 @@ from dptools.utils import colors
 
 
 class EvaluateDP:
+    """
+    Class to read deepmd test sets (created with CLI :doc:`../commands/input` command
+    or :class:`~dptools.train.DeepInput`).
+
+    Args:
+        test_sets (list[str] or str): Paths to deepmd test set folders. E.g.,
+            ``'data/system1/test/set.000'``
+            # TODO: Add support for other input types (.traj with vasp calculators, etc.)
+
+        dp_graph (str): Path to deepmd model to use for DP predictions.
+
+        save_plot (bool): Save parity plot to parity.png if True.
+    """
+
     def __init__(self, test_sets, dp_graph="graph.pb", save_plot=False):
         from deepmd.infer import DeepPot as DP
         self.dp = DP(dp_graph)
