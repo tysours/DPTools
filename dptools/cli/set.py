@@ -1,5 +1,7 @@
+import os
+
 from dptools.cli import BaseCLI
-from dptools.env import set_model, set_sbatch, set_params, set_custom_env
+from dptools.env import set_model, set_sbatch, set_params, set_custom_env, set_training_params
 
 
 class CLI(BaseCLI):
@@ -53,8 +55,14 @@ class CLI(BaseCLI):
         Args:
             thing (str): Path to file you want to set (.pb, .sh, .yaml, or .json file).
         """
-        ext2function = {"pb": set_model, "sh": set_sbatch, "yaml": set_params}
-        ext = thing.split(".")[-1]
+        ext2function = {
+                        ".pb": set_model,
+                        ".sh": set_sbatch,
+                        ".yaml": set_params,
+                        ".json": set_training_params,
+                        }
+
+        ext = os.path.splitext(thing)[-1]
         if ext not in ext2function:
             raise TypeError(f"Unrecognized file type for {thing}. Try 'dptools set -h'")
         set_thing = ext2function[ext]

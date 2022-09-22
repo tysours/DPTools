@@ -5,6 +5,7 @@ i.e. controls things set with CLI :doc:`../commands/set` command.
 """
 
 import os
+import json
 import socket
 import dotenv
 
@@ -32,7 +33,7 @@ def set_custom_env(label):
 
 
 def get_dpfaults(key="model"):
-    """ like defaults but for dp (haha... ha..) """
+    """like defaults but for dp (haha... ha..)"""
     default_vals = get_env()
 
     if key == "model":
@@ -106,7 +107,7 @@ def set_model(model, n_model=""):
     if not n_model: # only write type_map once if setting ensemble of models
         type_map = graph2typemap(graph)
         type_map_str = typemap2str(type_map)
-        set_env(f"DPTOOLS_TYPE_MAP", type_map_str)
+        set_env("DPTOOLS_TYPE_MAP", type_map_str)
 
 
 def set_sbatch(script):
@@ -126,3 +127,21 @@ def set_sbatch(script):
 def set_params(params):
     from dptools.simulate.parameters import set_parameter_set
     set_parameter_set(params)
+
+
+def set_training_params(in_json):
+    if isinstance(in_json, str):
+        with open(in_json) as file:
+            in_json = json.loads(file.read())
+    if not in_json.get("model"):
+        # check if correct param file/dict was given before overwriting default file
+        raise KeyError("No model parameters found in json file.")
+
+    # no need to keep these values since they will be overwritten anyway
+    in_json["model"]["type_map"] = []
+    in_json["training"]["training_data"]["systems"] = []
+    in_json["training"]["validation_data"]["systems"] = []
+
+    path = os.path.join(basedir, "train/in.json")
+    with open(path, "w") as file:
+        file.write(json.dumps(in_json, indent=4))
