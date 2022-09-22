@@ -11,11 +11,14 @@ class CLI(BaseCLI):
     """
     Display information on set DP models and Slurm parameters.
 
-    https://dptools.rtfd.io/en/latest/commands/info.html
+    :doc:`Complete documentation here<../commands/info>`
 
     Examples:
-        dptools info # display all set environments
-        dptools info -m water # display specific labelled environment
+
+    .. code-block:: console
+
+        $ dptools info # display all set environments
+        $ dptools info -m water # display specific labelled environment
     """
     help_info = "Show loaded DP models and sbatch parameters"
 

@@ -5,7 +5,12 @@ class CLI(BaseCLI):
     """
     Get params.yaml for specific simulation type.
 
+    :doc:`Complete documentation here<../commands/get>`
+
     Examples:
+
+    .. code-block:: console
+
         $ dptools get cellopt
         $ dptools get nvt-md
         $ dptools get nvt-md.900K # custom simulation params

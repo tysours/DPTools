@@ -8,13 +8,16 @@ class CLI(BaseCLI):
     """
     Create deepmd-kit training set folder from ASE .db, .traj, or vasprun.xml files.
 
-    Complete documentaion: https://dptools.rtfd.io/en/latest/commands/input.html
+    :doc:`Complete documentaion here<../commands/input>`
 
-    examples:
-        dptools input 00_system1.db 00_system2.db
-        dptools input 0*_sys*.db # equivalent to above
-        dptools input 00_system1/vasprun.xml 00_system2/vasprun.xml
-        dptools input -p /path/to/dataset/folder 0*.db
+    Examples:
+
+    .. code-block:: console
+
+        $ dptools input 00_system1.db 00_system2.db
+        $ dptools input 0*_sys*.db # equivalent to above
+        $ dptools input 00_system1/vasprun.xml 00_system2/vasprun.xml
+        $ dptools input -p /path/to/dataset/folder 0*.db
     """
     help_info = "Set up deepmd-kit training input from ASE/VASP output"
     def add_args(self):

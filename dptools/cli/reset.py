@@ -9,9 +9,12 @@ class CLI(BaseCLI):
     """
     Reset models or sbatch parameters for environments made using ``dptools set ...``.
 
-    Complete documentation: https://dptools.rtfd.io/en/latest/commands/reset.html
+    :doc:`Complete documentation here<../commands/reset>`
 
     Examples:
+
+    .. code-block:: console
+
         $ dptools reset all
         $ dptools reset -m water all
         $ dptools reset sbatch

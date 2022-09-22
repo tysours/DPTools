@@ -12,12 +12,16 @@ class CLI(BaseCLI):
     Intelligently select new training configurations using an ensemble of models
     and the approach described in DP-GEN (DOI: 10.1016/j.cpc.2020.107206).
 
-    Complete documentation: https://dptools.rtfd.io/en/latest/commands/sample.html
+    :doc:`Complete documentation here<../commands/sample>`
 
     Examples:
+
+    .. code-block:: console
+
         $ dptools sample -n 200 nvt-md.traj
         $ dptools sample -n 100 --lo 0.05 --hi 0.25 nvt-md.traj
         $ dptools sample -m water_ensemble -p npt-md.traj
+
     """
     help_info = "Select new training configs from MD traj "\
         "using force prediction deviations from ensemble of DPs"

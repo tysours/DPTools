@@ -14,14 +14,17 @@ class CLI(BaseCLI):
     """
     Run LAMMPS simulations using trained DP models.
 
-    Detailed documentation: https://dptools.rtfd.io/en/latest/commands/run.html
+    :doc:`Complete documentation here<../commands/run>`
 
     Examples:
-        dptools run opt start.traj # simple atomic position optimization
-        dptools run cellopt start.traj # simple unit cell optimization
-        dptools run /path/to/params.yaml start.traj # custom param file simulation
-        dptools run -s eos 0*/start.traj # submit slurm job eos simulations on multiple structures
-        dptools run -s -m water nvt-md start.traj # submit slurm nvt-md run using set water model
+
+    .. code-block:: console
+
+        $ dptools run opt start.traj # simple atomic position optimization
+        $ dptools run cellopt start.traj # simple unit cell optimization
+        $ dptools run /path/to/params.yaml start.traj # custom param file simulation
+        $ dptools run -s eos 0*/start.traj # submit slurm job eos simulations on multiple structures
+        $ dptools run -s -m water nvt-md start.traj # submit slurm nvt-md run using set water model
     """
     help_info = "Run simulation using trained DP model "\
             "(USE COMMAND 'dptools set path/to/graph.pb' first)"

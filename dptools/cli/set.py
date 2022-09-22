@@ -6,17 +6,19 @@ class CLI(BaseCLI):
     """
     Set DP models, Slurm settings, calculation parameters, or deepmd-kit training parameters
 
-    Detailed documentation at https://dptools.readthedocs.io/en/latest/commands/set.html
+    :doc:`Complete documentation here<../commands/set>`
 
     Examples:
 
-        dptools set /home/user/projects/dp_models/h2o.pb
-        dptools set 00/graph.pb 01/graph.pb 02/graph.pb 03/graph.pb # ensemble
-        dptools set -m water /home/user/projects/dp_models/h2o.pb
-        dptools set -m hpc_para parallel_settings.sh
-        dptools set -m hpc_serial serial_settings.sh
-        dptools set params.yaml
-        dptools set /path/to/in.json
+    .. code-block:: console
+
+        $ dptools set /home/user/projects/dp_models/h2o.pb
+        $ dptools set 00/graph.pb 01/graph.pb 02/graph.pb 03/graph.pb # ensemble
+        $ dptools set -m water /home/user/projects/dp_models/h2o.pb
+        $ dptools set -m hpc_para parallel_settings.sh
+        $ dptools set -m hpc_serial serial_settings.sh
+        $ dptools set params.yaml
+        $ dptools set /path/to/in.json
     """
     help_info = "Set DP model defaults, calculation parameters, or sbatch settings"
 

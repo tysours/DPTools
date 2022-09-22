@@ -9,9 +9,12 @@ class CLI(BaseCLI):
     Generate parity plots comparing DP model accuracy for energy and force
     (and stress if available) predictions with ab-initio values.
 
-    Complete documentation: https://dptools.rtfd.io/en/latest/commands/parity.html
+    :doc:`Complete documentation here<../commands/parity>`
 
     Examples:
+
+    .. code-block:: console
+
         $ dptools parity
         $ dptools parity /path/to/dataset/system*/test/set*
         $ dptools parity -m ../old_graph.pb test_set.traj
