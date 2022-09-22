@@ -148,31 +148,14 @@ class LammpsInput:
         self.write_coords()
 
         for key in ["bonds", "angles", "dihedrals", "impropers"]:
-            self._write_geometry(key)
+            self.write_geometry(key)
 
         datatemp = DataTemplate(f"data.{self.name}", self)
         datatemp.write()
 
-    def write_geometry(self, key):
-        """
-        Deprecated. Generalized method to write geometry components (bonds, angles,
-        dihedrals, or impropers) to lammps data file and set quantities
-        (num bonds, bond types, etc.).
-
-        Args:
-            key (str): geometry component to write
-                ('bonds', 'angles', 'dihderals', or 'impropers').
-        """
-        if getattr(self, f"_{key}"): # e.g.  if self._bonds:
-            writer = getattr(self, f"write_{key}") # self.write_bonds()
-            writer()
-        else:
-            setattr(self, key, "")
-            setattr(self, f"n{key}", 0)
-            setattr(self, f"n{key[0]}types", 0)
 
     def write_cell(self):
-        """Transform and write self.atoms' ase.cell.Cell to lammps data file."""
+        """Transform and write self.atoms' ``ase.cell.Cell`` to lammps data file."""
         cell = convert_cell(self.atoms.cell)[0]
         self.x = f"0 {cell[0, 0]}"
         self.y = f"0 {cell[1, 1]}"
@@ -211,6 +194,90 @@ class LammpsInput:
                 #coords_str += f" {a.index + 1} {a.tag} {x} {y} {z}\n"
 
         self.coords = coords_str
+
+    def write_geometry(self, key):
+        """
+        Generalized method to write bonds, angles, maybe dihedrals (untested) to lammps data file.
+        Uses ``ase.geometry.Analysis`` to generate list of bonds, angles, etc.
+
+        Args:
+            key (str): Geometry component to write ('bonds', 'angles', 'dihedrals', 'impropers').
+        """
+        n = 0
+        n_types = 0
+        text = ""
+        if getattr(self, f"_{key}"): # e.g. if _bonds, write bonds
+            if key in ["dihedrals", "impropers"]:
+                raise NotImplementedError(f"{key} not implemented, harass me if you need it")
+
+            # define order of indices when writing key
+            # (e.g. angles need central atom in middle, 1-0-2)
+            orders = {"bonds": "01", "angles": "102", "dihedrals": "0123"}
+            if not hasattr(self, "anal"): # only calc once
+                self.anal = Analysis(self.atoms)
+
+            def t_str(order, *t):
+                tsorted = [str(sorted(t)[int(i)]) for i in order]
+                return "-".join(tsorted)
+
+            tags = self.atoms.get_tags()
+            types = {}
+            unique = getattr(self.anal, f"unique_{key}")[0]
+            for i, groups in enumerate(unique):
+                for neighbors in groups:
+                    if isinstance(neighbors, np.int32):
+                        neighbors = [neighbors] # bonds only have single (int) neighbor
+                    typ = t_str(orders[key], tags[i], *[tags[n] for n in neighbors])
+
+                    if typ in types:
+                        types[typ].append((i, *neighbors))
+                    else:
+                        types[typ] = [(i, *neighbors)]
+
+            n_types = len(types)
+            text = key.capitalize() + "\n\n"
+            #for i, (typ, groups) in enumerate(types.items()):
+            for i, typ in enumerate(sorted(types.keys())):
+                for group in types[typ]:
+                    g_str = "\t".join([str(g + 1) for g in group])
+                    text += f" {n+1}\t{i+1}\t{g_str}\n"
+                    n += 1
+
+        setattr(self, key, text)
+        setattr(self, f"n{key}", n)
+        setattr(self, f"n{key[0]}types", n_types)
+
+    def write_infile(self):
+        """
+        Write lammps input file containing all general setup commands
+        (e.g. define units, read data file, etc.).
+        """
+        if not self.pair_coeff:
+            self.pair_coeff = "pair_coeff * *\n"
+
+        if self.groups is not None:
+            raise NotImplementedError("Harass me if you need it")
+
+        intemp = InputTemplate(f"in.{self.name}", self)
+        intemp.write()
+
+    def _write_geometry(self, key):
+        """
+        Deprecated, use new write_geometry. Generalized method to write geometry components
+        (bonds, angles, dihedrals, or impropers) to lammps data file and set quantities
+        (num bonds, bond types, etc.).
+
+        Args:
+            key (str): geometry component to write
+                ('bonds', 'angles', 'dihderals', or 'impropers').
+        """
+        if getattr(self, f"_{key}"): # e.g.  if self._bonds:
+            writer = getattr(self, f"write_{key}") # self.write_bonds()
+            writer()
+        else:
+            setattr(self, key, "")
+            setattr(self, f"n{key}", 0)
+            setattr(self, f"n{key[0]}types", 0)
 
     def write_bonds(self):
         """
@@ -265,57 +332,6 @@ class LammpsInput:
 
         raise NotImplementedError("Too lazy to add angles, harass me if you need it")
 
-    def _write_geometry(self, key):
-        """
-        Generalized method to write bonds, angles, maybe dihedrals (untested) to lammps data file.
-        Uses ase.geometry.Analysis to generate list of bonds, angles, etc.
-
-        Args:
-            key (str): Geometry component to write ('bonds', 'angles', 'dihedrals', 'impropers').
-        """
-        n = 0
-        n_types = 0
-        text = ""
-        if getattr(self, f"_{key}"): # e.g. if _bonds, write bonds
-            if key in ["dihedrals", "impropers"]:
-                raise NotImplementedError(f"{key} not implemented, harass me if you need it")
-
-            # define order of indices when writing key
-            # (e.g. angles need central atom in middle, 1-0-2)
-            orders = {"bonds": "01", "angles": "102", "dihedrals": "0123"}
-            if not hasattr(self, "anal"): # only calc once
-                self.anal = Analysis(self.atoms)
-
-            def t_str(order, *t):
-                tsorted = [str(sorted(t)[int(i)]) for i in order]
-                return "-".join(tsorted)
-
-            tags = self.atoms.get_tags()
-            types = {}
-            unique = getattr(self.anal, f"unique_{key}")[0]
-            for i, groups in enumerate(unique):
-                for neighbors in groups:
-                    if isinstance(neighbors, np.int32):
-                        neighbors = [neighbors] # bonds only have single (int) neighbor
-                    typ = t_str(orders[key], tags[i], *[tags[n] for n in neighbors])
-
-                    if typ in types:
-                        types[typ].append((i, *neighbors))
-                    else:
-                        types[typ] = [(i, *neighbors)]
-
-            n_types = len(types)
-            text = key.capitalize() + "\n\n"
-            #for i, (typ, groups) in enumerate(types.items()):
-            for i, typ in enumerate(sorted(types.keys())):
-                for group in types[typ]:
-                    g_str = "\t".join([str(g + 1) for g in group])
-                    text += f" {n+1}\t{i+1}\t{g_str}\n"
-                    n += 1
-
-        setattr(self, key, text)
-        setattr(self, f"n{key}", n)
-        setattr(self, f"n{key[0]}types", n_types)
 
     def write_dihedrals(self):
         """Deprecated before it was even written :("""
@@ -325,19 +341,6 @@ class LammpsInput:
         """Deprecated before it was even written :("""
         raise NotImplementedError("Harass me if you need this.")
 
-    def write_infile(self):
-        """
-        Write lammps input file containing all general setup commands
-        (e.g. define units, read data file, etc.).
-        """
-        if not self.pair_coeff:
-            self.pair_coeff = "pair_coeff * *\n"
-
-        if self.groups is not None:
-            raise NotImplementedError("Harass me if you need it")
-
-        intemp = InputTemplate(f"in.{self.name}", self)
-        intemp.write()
 
 
 class Template:
