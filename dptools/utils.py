@@ -1,9 +1,12 @@
+"""
+Assorted utilities for plots, reading things, converting things, etc.
+"""
 import numpy as np
 from ase import Atoms
 from ase.io import write, read
 from ase.io.formats import string2index
+from ase.db import connect
 from ase.data import chemical_symbols
-import os
 import json
 
 #seaborn.color_palette('deep')
@@ -18,17 +21,40 @@ colors = [(0.2980392156862745, 0.4470588235294118, 0.6901960784313725),
           (0.8, 0.7254901960784313, 0.4549019607843137),
           (0.39215686274509803, 0.7098039215686275, 0.803921568627451)]
 
-def generate_color():
+def _generate_color():
     for color in colors:
         yield color
 
-gen_color = generate_color()
+_gen_color = _generate_color()
 def next_color():
-    """Convenience function to grab a new color during plotting loops"""
-    return next(gen_color)
+    """
+    Convenience function to grab a new color during plotting loops.
+
+    Returns:
+        color (tuple[float]): New color rgb vals from seaborn.color_palette('deep')
+
+    Example:
+
+        .. code-block:: python
+
+            for values in all_values:
+                plt.plot(values, color=next_color())
+    """
+    return next(_gen_color)
 
 
 def read_dump(dump, type_map, index=":"):
+    """
+    Reads in lammps dump file and returns corresponding ase.Atoms list.
+
+    Args:
+        dump (str): Path to dump file to read.
+        type_map (dict): Dictionary with element-index mapping, e.g. {'Si': 0, 'O': 1}
+        index (str): index slice to control which images are returned, e.g. ':', '::100', etc.
+
+    Returns:
+        traj (list[ase.Atoms]): List of dump images as ase.Atoms objects
+    """
     type_map = read_type_map(type_map) # support str, json, dict inputs
     if 0 in type_map.values(): # lammps indexing starts at 1
         type_map = {k: v + 1 for k, v in type_map.items()}
@@ -40,7 +66,7 @@ def read_dump(dump, type_map, index=":"):
     for i, line in enumerate(lines):
         if "BOX BOUNDS" in line:
             n_atoms = int(lines[i - 1])
-            lammps_cell = np.array([str_to_float(lines[i + j + 1]) for j in range(3)])
+            lammps_cell = np.array([_str_to_float(lines[i + j + 1]) for j in range(3)])
             cell, shift = convert_dump_cell(lammps_cell)
         elif "ITEM: ATOMS" in line:
             ids = [int(l.split()[0]) for l in lines[i + 1 : i + 1 + n_atoms]]
@@ -51,7 +77,7 @@ def read_dump(dump, type_map, index=":"):
             )
             symbols = np.array([type_map[t] for t in types])
             positions = np.array(
-                [str_to_float(lines[i + j + 1]) for j in range(n_atoms)]
+                [_str_to_float(lines[i + j + 1]) for j in range(n_atoms)]
             )
             if "xs" in line:
                 positions = positions @ cell
@@ -64,12 +90,21 @@ def read_dump(dump, type_map, index=":"):
     return traj[string2index(index)]
 
 
-def str_to_float(l):
+def _str_to_float(l):
     return list(map(float, l.split()[-3:]))
 
 
 def convert_dump_cell(lammps_cell):
-    """converts lammps dump cell format to ase"""
+    """
+    Converts lammps dump cell format to ase cell.
+
+    Args:
+        lammps_cell (numpy.array): Simulation cell from lammps dump file.
+
+    Returns:
+        cell (numpy.array): New 3x3 array to use with ase.
+        shift (numpy.array): xyz shifts to place atoms at origin aligned with cell.
+    """
     xlo_bound, xhi_bound = lammps_cell[0, :2]
     ylo_bound, yhi_bound = lammps_cell[1, :2]
     zlo_bound, zhi_bound = lammps_cell[2, :2]
@@ -93,11 +128,31 @@ def convert_dump_cell(lammps_cell):
     return cell, shift
 
 def read_db(db_name, indices):
+    """
+    Reads ase db and returns entries as list of Atoms objects.
+    Useless, just use ase.io.read(db_name, index=indices) instead.
+
+    Args:
+        db_name (str): Path to ase db file.
+        indices (str): Index slice, e.g. ::10, :, 1:100, etc.
+
+    Returns:
+        traj (list[ase.Atoms]): db entries as list of Atoms objects.
+    """
     with connect(db_name) as db:
         traj = [row.toatoms() for row in db.select()]
     return traj[string2index(indices)]
 
 def graph2typemap(graph):
+    """
+    Determine type_map for a given deepmd model.
+
+    Args:
+        graph (str): Path to deepmd model .pb file.
+
+    Returns:
+        type_map (dict): Dictionary that maps each atomic symbol to type map index
+    """
     from deepmd import DeepPotential
     dp = DeepPotential(graph)
     type_map = {sym: i for i, sym in enumerate(dp.get_type_map())}
@@ -144,6 +199,16 @@ def str2typemap(tm_str):
     return type_map
 
 def randomize_seed(in_json):
+    """
+    Take input .json or dict with training parameters and randomize seeds
+    for model ensemble training.
+
+    Args:
+        in_json (str or dict): Path to .json or dict with deepmd training parameters.
+
+    Returns:
+        (dict): Training parameter dictionary with new randomized seed values.
+    """
     if isinstance(in_json, str):
         with open(in_json) as file:
             in_json = json.loads(file.read())
@@ -156,6 +221,10 @@ def randomize_seed(in_json):
     return in_json
 
 def get_seed(max_val=999999, n=1):
+    """
+    Returns:
+        seed (int or list[int]): n random ints between 0 and max_val.
+    """
     if n > 1:
         seed = np.random.randint(max_val, size=n)
         seed = [int(s) for s in seed] # dtype=int64 not json serializable
@@ -164,9 +233,39 @@ def get_seed(max_val=999999, n=1):
     return seed
 
 def columnize(*data):
-    return np.array([d for d in data]).T
+    """
+    Takes lists or 1D arrays and concatenates everything into columnized array.
+    Basically just np.column_stack without needing a single tuple arg (i.e. slightly useless).
+    """
+    return np.array(list(data)).T
 
 class Converter:
+    """
+    Class to convert between different ASE/VASP/LAMMPS outputs. Mostly useful if wanting
+    to concatenate all MD images from variable-time jobs, but also supports lammps dump
+    conversions and common ASE formats.
+
+    Args:
+        inputs (list[str]): Paths to input structure files to convert. Images from each
+            input are concatenated in output.
+
+        output (str): Name of file with desired conversion extension specified,
+            e.g. ``'out.traj'``
+
+        indices (str): Index slice, e.g. ``'::10'``, :, ``'1:100'``, etc.
+
+    Example:
+
+        .. code-block:: python
+
+            # concat MD images (ignores 1st image if identical to final image in previous input)
+            >>> from dptools.utils import Converter
+            >>> inputs = ['md_000/vasprun.xml', 'md_001/vasprun.xml', 'md_002/vasprun.xml']
+            >>> output = 'md.traj'
+            >>> converter = Converter(inputs, outputs)
+            >>> converter.convert()
+    """
+
     def __init__(self, inputs, output, indices=":"):
         self.inputs = inputs
         self.output = output
@@ -174,7 +273,7 @@ class Converter:
         self.type_readers = {
                              "xml": read,
                              "traj": read,
-                             "db": read, 
+                             "db": read,
                              "cif": read,
                              "xyz": read,
                              "dump": read_dump,
@@ -200,9 +299,9 @@ class Converter:
     def _check_type(self, f):
         ftype = f.split(".")[-1]
         if ftype not in self.type_readers:
+            types = self.type_readers.items()
             raise NotImplementedError(f"supported types:\t{types}\nharass me for others")
         return ftype
-
 
     def convert(self, **kwargs):
         traj = []

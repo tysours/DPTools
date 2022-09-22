@@ -2,8 +2,11 @@
 Functions for controlling different dptools env configurations
 (deepmd models, sbatch parameters, etc.).
 i.e. controls things set with CLI :doc:`../commands/set` command.
-"""
 
+Mostly indented to be used behind the scenes with CLI commands, but theoretically could
+be used in python scripts as well. Slightly confusing usage with global env_file (sorry),
+so use at your own risk.
+"""
 import os
 import json
 import socket
@@ -18,22 +21,33 @@ env_file = default_env_file
 
 
 def set_env(key, value):
+    """Set key-value to global env file."""
     dotenv.set_key(env_file, key, value)
 
 
 def get_env():
+    """Get all key-values from global env file."""
     values = dotenv.dotenv_values(env_file)
     return values
 
 
 def set_custom_env(label):
+    """Sets global env file if different from default .env"""
     if label:
         global env_file
         env_file = default_env_file + "." + label
 
 
 def get_dpfaults(key="model"):
-    """like defaults but for dp (haha... ha..)"""
+    """
+    Like defaults but for dp (haha... ha..). Loads specific key-values from env file.
+
+    Args:
+        key (str): ``(model, ensemble, sbatch)`` Gets env information from env file.
+            * if key is set to model, return env's deepmd model path and type map
+            * if key is set to ensemble, return all model paths belonging to env's ensemble
+            * if key is set to sbatch, return env's Slurm settings
+    """
     default_vals = get_env()
 
     if key == "model":
@@ -62,6 +76,10 @@ def get_dpfaults(key="model"):
 
 
 def set_default_sbatch(warn=True):
+    """
+    Sets Slurm parameters from dptools.hpc.hpc_defaults. Mostly used by CLI when
+    no Slurm info has been set to env.
+    """
     host = socket.gethostname()
     try:
         for k, v in hpc_defaults[host].items():
@@ -79,6 +97,9 @@ def set_default_sbatch(warn=True):
 
 
 def clear(keys):
+    """
+    Clear specific key-values (or entire env) for loaded global env file.
+    """
     if keys is all:
         os.remove(env_file)
     else:
@@ -89,6 +110,9 @@ def clear(keys):
 
 
 def clear_model():
+    """
+    Clear model related key-values from loaded global env file.
+    """
     keys = [
             "DPTOOLS_TYPE_MAP",
             "DPTOOLS_MODEL",
@@ -100,6 +124,10 @@ def clear_model():
 
 
 def set_model(model, n_model=""):
+    """
+    Set path to deepmd model .pb file to use during simulations evoked by CLI
+    :doc:`../commands/run` command.
+    """
     if not n_model:
         clear_model()
     graph = os.path.abspath(model)
@@ -111,6 +139,12 @@ def set_model(model, n_model=""):
 
 
 def set_sbatch(script):
+    """
+    Reads script and searches for any #SBATCH line to set to env file.
+
+    Args:
+        script (str): Path to .sh script with #SBATCH comments to set Slurm params.
+    """
     with open(script) as file:
         lines = [l.strip() for l in file]
     sbatch_vars = []
@@ -125,11 +159,17 @@ def set_sbatch(script):
 
 
 def set_params(params):
+    """
+    Save set of simulation parameters to run with CLI :doc:`../commands/run` command.
+    """
     from dptools.simulate.parameters import set_parameter_set
     set_parameter_set(params)
 
 
 def set_training_params(in_json):
+    """
+    Save deepmd-kit training parameters to use with CLI :doc:`../commands/train` command.
+    """
     if isinstance(in_json, str):
         with open(in_json) as file:
             in_json = json.loads(file.read())
