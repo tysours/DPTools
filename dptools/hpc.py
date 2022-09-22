@@ -33,11 +33,14 @@ class SlurmJob:
     """
     Sets up and optionally submits slurm job scripts on HPC systems. Default settings for
     your HPC system can be added to dptools.hpc.hpc_defaults, or controlled using the
-    CLI :doc:`<../commands/set>` command.
+    CLI :doc:`../commands/set` command.
+
+    .. role:: python(code)
+        :language: python
 
     Args:
         sbatch_comment (str): Single line containing all Slurm #SBATCH parameters.
-            e.g., '#SBATCH -J job_name -q regular -N 1 --time=11:00:00'
+            e.g., :python:`'#SBATCH -J job -q regular -N 1 --time=11:00:00'`
 
         directories (list[str] or str): Path(s) to job submission directories.
 
@@ -50,13 +53,14 @@ class SlurmJob:
 
             .. code-block:: python
 
-                for command, dir in zip(commands, dir):
-                    write_script(command=command, sub_dir=dir)
+                for command, dir in zip(commands, directories):
+                    write_script(command=command, submission_dir=dir)
 
             If False, then the same command(s) is used in all submission directories.
 
         **kwargs: Unpacked dict containing any env variables to set in submission script.
-            e.g. kwargs = dict(TF_INTRA_OP_PARALLELISM_THREADS="1") adds this line to .sh script,
+            e.g. :python:`kwargs = dict(TF_INTRA_OP_PARALLELISM_THREADS="1")` adds this
+            line to .sh script,
 
             .. code-block:: bash
 
@@ -124,13 +128,13 @@ class SlurmJob:
         for comm in self.commands:
             yield comm
 
-    def _write_file(self, path):
+    def write_script(self, path):
         with open(path, "w") as file:
             file.write(self.text)
 
     def write(self, sub=False):
         for directory, path in zip(self.directories, self.paths):
-            self._write_file(path)
+            self.write_script(path)
             if sub:
                 os.chdir(directory)
                 os.system(f"sbatch {self.file_name}")
