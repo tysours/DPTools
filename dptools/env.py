@@ -3,8 +3,8 @@ Functions for controlling different dptools env configurations
 (deepmd models, sbatch parameters, etc.).
 i.e. controls things set with CLI :doc:`../commands/set` command.
 
-Mostly indented to be used behind the scenes with CLI commands, but theoretically could
-be used in python scripts as well. Slightly confusing usage with global env_file (sorry),
+Mostly indented to be used behind the scenes when using CLI commands, but theoretically could
+be used in your python scripts as well. Slightly confusing usage with global env_file (sorry),
 so use at your own risk.
 """
 import os
@@ -44,6 +44,7 @@ def get_dpfaults(key="model"):
 
     Args:
         key (str): ``(model, ensemble, sbatch)`` Gets env information from env file.
+
             * if key is set to model, return env's deepmd model path and type map
             * if key is set to ensemble, return all model paths belonging to env's ensemble
             * if key is set to sbatch, return env's Slurm settings
