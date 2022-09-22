@@ -2,7 +2,7 @@ import os
 import json
 
 from dptools.cli import BaseCLI
-from dptools.train.parity import EvaluateDeepMD
+from dptools.train.parity import EvaluateDP
 
 class CLI(BaseCLI):
     """
