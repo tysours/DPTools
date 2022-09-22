@@ -1,15 +1,12 @@
-from ase.io import read
-from ase.db import connect
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-import json
 
 from dptools.utils import colors
 
 
-class EvaluateDeepMD:
-    def __init__(self, test_sets, dp_graph='graph.pb', save_plot=False):
+class EvaluateDP:
+    def __init__(self, test_sets, dp_graph="graph.pb", save_plot=False):
         from deepmd.infer import DeepPot as DP
         self.dp = DP(dp_graph)
         if isinstance(test_sets, str):
@@ -40,24 +37,24 @@ class EvaluateDeepMD:
                     self.get_mse(np.vstack(self.forces))]
 
     def evaluate(self, test_set):
-        coord = np.load(f'{test_set}/coord.npy')
-        cell = np.load(f'{test_set}/box.npy')
-        atype = np.loadtxt(f'{test_set}/../type.raw', dtype=int)
-        e, f, v = self.dp.eval(coord, cell, atype)
-        e = e.flatten()
-        f = f.flatten()
-        v = v.flatten()
+        coord = np.load(f"{test_set}/coord.npy")
+        cell = np.load(f"{test_set}/box.npy")
+        atype = np.loadtxt(f"{test_set}/../type.raw", dtype=int)
+        e_dp, f_dp, v_dp = self.dp.eval(coord, cell, atype)
+        e_dp = e_dp.flatten()
+        f_dp = f_dp.flatten()
+        v_dp = v_dp.flatten()
 
-        real_e = np.load(f'{test_set}/energy.npy')
-        real_f = np.load(f'{test_set}/force.npy').flatten()
-        if 'virial.npy' in os.listdir(test_set):
-            real_v = np.load(f'{test_set}/virial.npy').flatten()
-            virials = np.append(real_v[:, np.newaxis], v[:, np.newaxis], axis=1)
+        e_dft = np.load(f"{test_set}/energy.npy")
+        f_dft = np.load(f"{test_set}/force.npy").flatten()
+        if "virial.npy" in os.listdir(test_set):
+            v_dft = np.load(f"{test_set}/virial.npy").flatten()
+            virials = np.append(v_dft[:, np.newaxis], v_dp[:, np.newaxis], axis=1)
         else:
             virials = None
 
-        energies = np.append(real_e[:, np.newaxis], e[:, np.newaxis], axis=1)
-        forces = np.append(real_f[:, np.newaxis], f[:, np.newaxis], axis=1)
+        energies = np.append(e_dft[:, np.newaxis], e_dp[:, np.newaxis], axis=1)
+        forces = np.append(f_dft[:, np.newaxis], f_dp[:, np.newaxis], axis=1)
         return energies, forces, virials
 
     @staticmethod
@@ -77,17 +74,17 @@ class EvaluateDeepMD:
         xrng = max(dft) - min(dft)
         xmin = min(dft) - 0.05 * xrng
         xmax = max(dft) + 0.05 * xrng
-        ax.plot([xmin, xmax], [xmin, xmax], '--k', zorder=1)
+        ax.plot([xmin, xmax], [xmin, xmax], "--k", zorder=1)
         ax.set_xlim([xmin, xmax])
         ax.set_ylim([xmin, xmax])
-        return
 
     def plot_parity(self, data, label, color, loss="mse", ax=None):
         if ax is None:
             ax = plt.gca()
         err = getattr(self, f"get_{loss.lower()}")(data)
         ax.plot(data[:, 0], data[:, 1], "o", ms=3, color=color, alpha=0.20)
-        ax.annotate(f"{loss.upper()} = {err:.3e}", xy=(0.1, 0.85), xycoords="axes fraction", fontsize=12)
+        ax.annotate(f"{loss.upper()} = {err:.3e}", xy=(0.1, 0.85),
+                xycoords="axes fraction", fontsize=12)
         self.plot_yx(data[:, 0], ax)
         ax.set_ylabel(f"DP {label}", fontsize=14)
         ax.set_xlabel(f"DFT {label}", fontsize=14)
@@ -102,8 +99,8 @@ class EvaluateDeepMD:
                 fig, axs = plt.subplots(1, 2, figsize=(8.5, 3.5))
 
         # TODO: Add ability to plot inidividual test sets
-        #np.save('energies', np.array(self.energies))
-        #np.save('forces', np.array(self.forces))
+        #np.save("energies", np.array(self.energies))
+        #np.save("forces", np.array(self.forces))
         e_data = np.vstack(self.energies)
         f_data = np.vstack(self.forces)
 
@@ -114,6 +111,6 @@ class EvaluateDeepMD:
         plt.tight_layout()
         plt.subplots_adjust(wspace=0.3)
         if self.save:
-            plt.savefig('results.png')
+            plt.savefig("parity.png")
         else:
             plt.show()
