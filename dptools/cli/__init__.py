@@ -1,4 +1,5 @@
 import argparse
+import re
 from importlib import import_module
 from textwrap import dedent, fill
 
@@ -39,9 +40,31 @@ class BaseCLI:
 
 
 class MyFormatter(argparse.ArgumentDefaultsHelpFormatter):
-    """Simple HelpFormatter that dedents text but retains docstring format"""
+    """
+    HelpFormatter that replaces reST refs in docstrings with readthedocs URLs
+    to print to console. Also dedents and retains docstring format.
+    """
 
     def _fill_text(self, text, width, indent):
+        # replaces e.g. :doc:`text<ref_path>`
+        pattern = r":[a-z]+:`[\w ]+<[.\w/]+>`"
+        subpattern_link = r"<../[a-z/]+>"
+        subpattern_text = r"`[\w ]+<"
+
+        url = ": https://dptools.rtfd.io/en/latest/"
+
+        matches = re.findall(pattern, text)
+        for match in matches:
+            keep = re.search(subpattern_text, match).group()[1:-1]
+            sub = re.search(subpattern_link, match).group()[4:-1]
+            new = f"{keep}{url}{sub}.html"
+            text = text.replace(match, new)
+
+        # replaces e.g. .. command:: text
+        pattern = r"[ ]*[.]{2} [\w-]+::[\w ]*\n\n"
+        while re.search(pattern, text):
+            text = re.sub(pattern, "", text)
+
         return dedent(text)
 
 
