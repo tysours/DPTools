@@ -1,3 +1,6 @@
+"""
+Module for controlling HPC job submissions. Currently only supports Slurm jobs.
+"""
 import os
 
 # defaults for Kulkarni group hpc systems
@@ -27,6 +30,38 @@ hpc_defaults = {
 
 # TODO: Split sbatch into n_nodes, n_tasks_per_node, etc.
 class SlurmJob:
+    """
+    Sets up and optionally submits slurm job scripts on HPC systems. Default settings for
+    your HPC system can be added to dptools.hpc.hpc_defaults, or controlled using the
+    CLI :doc:`<../commands/set>` command.
+
+    Args:
+        sbatch_comment (str): Single line containing all Slurm #SBATCH parameters.
+            e.g., '#SBATCH -J job_name -q regular -N 1 --time=11:00:00'
+
+        directories (list[str] or str): Path(s) to job submission directories.
+
+        file_name (str): Name of submission script to write. Currently only supports .sh scripts,
+            but support for others (e.g., .py) can be easily added upon request.
+
+        zip_commands (bool): Set to True if each submission dir requires a unique set of commands.
+            If True, then len(commands) must equal len(directories), and each item in commands
+            is used for the respective directory index. i.e., job scripts are written as,
+
+            .. code-block:: python
+
+                for command, dir in zip(commands, dir):
+                    write_script(command=command, sub_dir=dir)
+
+            If False, then the same command(s) is used in all submission directories.
+
+        **kwargs: Unpacked dict containing any env variables to set in submission script.
+            e.g. kwargs = dict(TF_INTRA_OP_PARALLELISM_THREADS="1") adds this line to .sh script,
+
+            .. code-block:: bash
+
+                export TF_INTRA_OP_PARALLELISM_THREADS=1
+    """
     def __init__(self,
                  sbatch_comment,
                  commands="",
@@ -40,7 +75,7 @@ class SlurmJob:
         self._zip = zip_commands
         self.commands = commands
         self.set_path_stuff(directories, file_name)
-        self.set_sh_text(**kwargs)
+        self.set_text(**kwargs)
 
     def get_header(self):
         header = f"#!/usr/bin/env bash\n{self.sbatch}\n"
@@ -53,7 +88,7 @@ class SlurmJob:
         self.file_name = file_name
         self.paths = [os.path.join(d, file_name) for d in self.directories]
 
-    def set_sh_text(self, **kwargs):
+    def set_text(self, **kwargs):
         header = self.get_header()
 
         exports = ""

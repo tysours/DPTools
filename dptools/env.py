@@ -1,3 +1,9 @@
+"""
+Functions for controlling different dptools env configurations
+(deepmd models, sbatch parameters, etc.).
+i.e. controls things set with CLI :doc:`../commands/set` command.
+"""
+
 import os
 import socket
 import dotenv
@@ -66,10 +72,9 @@ def set_default_sbatch(warn=True):
             for k, v in hpc_defaults[host].items():
                 print(k, "=", v)
             print("-" * 64)
-    except KeyError:
+    except KeyError as exc:
         raise Exception("Host unrecognized and no default HPC parameters found."\
-            "\nUse 'dptools set script.sh' with desired #SBATCH comment in script.sh")
-            # XXX: What kind of exception would this be?
+            "\nUse 'dptools set script.sh' with desired #SBATCH comment in script.sh") from exc
 
 
 def clear(keys):
