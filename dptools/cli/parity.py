@@ -28,12 +28,20 @@ class CLI(BaseCLI):
                 help="Specify path of frozen .pb deepmd model to use")
         self.parser.add_argument("-l", "--loss-function", type=str, default="mse", choices=["mse", "mae", "rmse"],
                 help="Type of loss function to display for parity plot error")
+        self.parser.add_argument("--xyz", action="store_true",
+                help="Plot each xyz force component separately")
+        self.parser.add_argument("--fancy", action="store_true",
+                help="Create fancy density heat map for forces parity plot")
 
     def main(self, args):
         if len(args.systems) > 0:
             systems = args.systems
         else:
             systems = self.read_systems()
+        if args.fancy:
+            raise NotImplementedError("Fancy plots coming soon...")
+        if args.xyz:
+            raise NotImplementedError("Separate xyz components plots coming soon...")
         evaldpmd = EvaluateDeepMD(systems, dp_graph=args.model)
         evaldpmd.plot(loss=args.loss_function)
 
