@@ -23,7 +23,7 @@ copyright = '2022, Ty Sours'
 author = 'Ty Sours'
 
 # The full version, including alpha/beta/rc tags
-release = '1.0.0'
+release = dptools.__version__
 
 
 # -- General configuration ---------------------------------------------------
