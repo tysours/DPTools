@@ -142,7 +142,7 @@ class NVT(Simulation):
         if pre_opt:
             self.pre_opt(200)
 
-        self.get_commands(**kwargs)
+        self.commands = self.get_commands(**kwargs)
 
     def get_commands(self, steps=10000, timestep=0.5, Ti=298.0, Tf=298.0, equil_steps=1000, write_freq=100, disp_freq=100, **kwargs):
         self._warn_unused(**kwargs)
@@ -176,7 +176,7 @@ class NPT(Simulation):
         if pre_opt:
             self.pre_opt(200, cell=True)
 
-        self.get_commands(**kwargs)
+        self.commands = self.get_commands(**kwargs)
 
     def get_commands(self, steps=10000, timestep=0.5, Pi=0.0, Pf=0.0, Ti=298.0, Tf=298.0, equil_steps=1000, write_freq=100, disp_freq=100, **kwargs):
         self._warn_unused(**kwargs)
@@ -213,7 +213,7 @@ class EOS(Simulation):
 
         self.set_volumes(lo, hi, N)
 
-        self.get_commands(**kwargs)
+        self.commands = self.get_commands(**kwargs)
 
     def get_commands(self, nsw=300, ftol=1e-3, etol=0.0, disp_freq=10, **kwargs):
         self._warn_unused(**kwargs)
