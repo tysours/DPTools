@@ -99,7 +99,14 @@ class CLI(BaseCLI):
         # NOTE: NEED TO SET THE LABEL BEFORE CALLING get_dpfaults
         #  Also, I suppose it's not really get_dpfaults if it can load custom envs
         if model_label:
+            if os.path.isfile(model_label) and model_label.endswith(".pb"):
+                err = "\nCan not load .pb files for 'dptools run -m ...' (long story)"\
+                      ". Give model a label and use with set command! Example:\n\n\t"\
+                      f"dptools set -m label {model_label}\n"
+                raise ValueError(err)
+
             set_custom_env(model_label)
+
         self.graph, self.type_map = get_dpfaults()
         self._label = model_label # need for submit_jobs()
 
