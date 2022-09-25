@@ -38,10 +38,8 @@ class CLI(BaseCLI):
             systems = args.systems
         else:
             systems = self.read_systems()
-        if args.xyz:
-            raise NotImplementedError("Separate xyz components plots coming soon...")
         evaldp = EvaluateDP(systems, dp_graph=args.model)
-        evaldp.plot(loss=args.loss_function, fancy=args.fancy)
+        evaldp.plot(loss=args.loss_function, xyz=args.xyz, fancy=args.fancy)
 
     @staticmethod
     def read_systems():

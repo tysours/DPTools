@@ -111,13 +111,27 @@ class EvaluateDP:
         ax.set_xlabel(f"DFT {label}", fontsize=14)
         ax.tick_params(labelsize=12)
 
-    def plot(self, loss="mse", axs=None, fancy=False):
+    def plot(self, loss="mse", axs=None, xyz=False, fancy=False):
+        """
+        Plot energy, force, and virial (if available) parity plots for DP predictions.
+
+        Args:
+            loss (str): {mse,mae,rmse} type of loss/error function to use for parity plot
+                error annotation.
+            axs (list[matplotlib.pyplot.Axes]): Optional, specific axes objects to plot on.
+            xyz (bool): If True, plot all xyz force components in separate parity plots. False
+                plots all components together (recommended, usually pointless to separate).
+            fancy (bool): If True, create fancy density parity plot for force predictions.
+        """
+        n_plots = 2
         if axs is None:
             if len(self.virials) > 0:
-                fig, axs = plt.subplots(1, 3, figsize=(12.75, 3.5))
+                n_plots += 1
                 v_data = np.vstack(self.virials)
-            else:
-                fig, axs = plt.subplots(1, 2, figsize=(8.5, 3.5))
+            if xyz:
+                n_plots += 2
+        width = 0.5 + 4 * n_plots
+        fig, axs = plt.subplots(1, n_plots, figsize=(width, 3.5))
 
         # TODO: Add ability to plot inidividual test sets
         #np.save("energies", np.array(self.energies))
@@ -126,9 +140,20 @@ class EvaluateDP:
         f_data = np.vstack(self.forces)
 
         self.plot_parity(e_data, "Energy (eV)", colors[3], loss=loss, ax=axs[0])
-        self.plot_parity(f_data, "Force (eV/Å)", colors[0], loss=loss, ax=axs[1], fancy=fancy)
-        if len(axs) == 3:
-            self.plot_parity(v_data, "Virial", colors[2], loss=loss, ax=axs[2])
+        if not xyz:
+            self.plot_parity(f_data, "Force (eV/Å)", colors[0], loss=loss, ax=axs[1], fancy=fancy)
+        else:
+            self.plot_parity(f_data[::3, :], "F$_x$ (eV/Å)", colors[0],
+                    loss=loss, ax=axs[1], fancy=fancy)
+
+            self.plot_parity(f_data[1::3, :], "F$_y$ (eV/Å)", colors[0],
+                    loss=loss, ax=axs[2], fancy=fancy)
+
+            self.plot_parity(f_data[2::3, :], "F$_z$ (eV/Å)", colors[0],
+                    loss=loss, ax=axs[3], fancy=fancy)
+
+        if len(axs) in [3, 5]:
+            self.plot_parity(v_data, "Virial", colors[2], loss=loss, ax=axs[-1])
         plt.tight_layout()
         plt.subplots_adjust(wspace=0.3)
         if self.save:
