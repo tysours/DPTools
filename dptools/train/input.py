@@ -18,19 +18,27 @@ class DeepInput:
 
     Args:
         atoms_file (str): File containing training set configurations (e.g., .db).
+
         atoms (ase.Atoms or None): Optional Atoms object to use for assigning atom types.
             First image in atoms_file is used if None specified.
+
         system_name (str): Descriptive name of atomic system to use as directory name in
             dataset folder.
+
         type_map (dict or None): Dictionary mapping each atomic symbol to corresponding
             atom type index, optional and alphabetic order if used if None specified.
             E.g., {'Si': 0, 'O': 1}.
+
         n (int): Max number of images to take from atoms_file. All images are randomly
             shuffled and then n are taken for training.
+
         path (str): Path to dataset parent folder, makes folder if doesn't already exist.
+
+        append (bool): If True, appends new configurations to current dataset if system_name
+            dataset already exists.
     """
 
-    def __init__(self, atoms_file, atoms=None, system_name=None, type_map=None, n=None, path="./data"):
+    def __init__(self, atoms_file, atoms=None, system_name=None, type_map=None, append=False, n=None, path="./data"):
         self.atoms_file = atoms_file
         if atoms is not None:
             self.atoms = atoms
@@ -38,6 +46,7 @@ class DeepInput:
         self.n = n
         self.path = path
         self.type_map = type_map
+        self._append = append
         self.set_dataset()
         self.write_input()
 
@@ -104,17 +113,27 @@ class DeepInput:
                         {len(self.energies)} entries")
 
         self.write_types()
-        self.write_npy("train", ":" + str(n_train))
-        self.write_npy("validation", str(n_train) + ":" + str(n_val))
-        self.write_npy("test", str(n_val) + ":")
+        self.write_npy_set("train", ":" + str(n_train))
+        self.write_npy_set("validation", str(n_train) + ":" + str(n_val))
+        self.write_npy_set("test", str(n_val) + ":")
 
-    def write_npy(self, dataset, indices):
+    def write_npy_set(self, dataset, indices):
         indices = string2index(indices)
         path = self.paths[dataset]
-        np.save(os.path.join(path, "coord"), self.positions[indices])
-        np.save(os.path.join(path, "force"), self.forces[indices])
-        np.save(os.path.join(path, "energy"), self.energies[indices])
-        np.save(os.path.join(path, "box"), self.box[indices])
+        self._write_npy_file(path, "coord", self.positions[indices])
+        self._write_npy_file(path, "force", self.forces[indices])
+        self._write_npy_file(path, "energy", self.energies[indices])
+        self._write_npy_file(path, "box", self.box[indices])
+
+    def _write_npy_file(self, path, key, vals):
+        file_name = os.path.join(path, f"{key}.npy")
+        if self._append and os.path.exists(file_name):
+            old_vals = np.load(file_name)
+            if old_vals.ndim == 2 and old_vals.shape[-1] != vals.shape[-1]:
+                # check for matching system sizes if appending to old dataset
+                raise ValueError(f"Tried appending to {file_name} but size mismatch found.")
+            vals = np.append(old_vals, vals, axis=0)
+        np.save(file_name, vals)
 
     def write_types(self):
         symbols = self.atoms.get_chemical_symbols()
@@ -160,6 +179,7 @@ class DeepInputs:
                  atoms=None,
                  system_names=None,
                  type_map=None,
+                 append=False,
                  n=None,
                  in_json=None,
                  path="./data",
@@ -189,7 +209,7 @@ class DeepInputs:
         self._json_file = in_json
 
         for db, a, sys in zip(db_names, atoms, system_names):
-            dpi = DeepInput(db, a, sys, self.type_map, n=n, path=path)
+            dpi = DeepInput(db, a, sys, self.type_map, append=append, n=n, path=path)
 
         self.set_json()
         self.update_json()
@@ -222,19 +242,15 @@ class DeepInputs:
 
     @staticmethod
     def _check_names(input_files, system_names):
-        raise_ = False
         n_in, n_sys, n_unique = len(input_files), len(system_names), len(np.unique(system_names))
         check1 = n_in != n_sys
         check2 = None not in system_names and n_unique != n_sys
         if check1 or check2:
-            raise_ = True
             if check1:
                 err = f"{n_sys} system_names provided for {n_in} input files"
             else:
                 err = "Duplicate names detected in system_names, need all unique"
-        if raise_:
             raise ValueError(err)
-
 
     def get_atoms(self, db_names):
         atoms = []

@@ -27,13 +27,20 @@ class CLI(BaseCLI):
                 help="Max number of images to take from each db")
         self.parser.add_argument("-p", "--path", type=str, default="./data",
                 help="Specify path to dataset directory")
+        self.parser.add_argument("-a", "--append", action="store_true",
+                help="Append to dataset if system already exists in dataset directory")
 
     def main(self, args):
         self.names = []
         for inp in args.inputs:
             self.set_name(inp)
         path = os.path.abspath(args.path)
-        thing = DeepInputs(args.inputs, system_names=self.names, path=path, n=args.n)
+        thing = DeepInputs(args.inputs,
+                           system_names=self.names,
+                           path=path,
+                           append=args.append,
+                           n=args.n,
+                           )
 
     def set_name(self, input_file):
         path, ext = os.path.splitext(input_file)
