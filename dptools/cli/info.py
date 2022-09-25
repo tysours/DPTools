@@ -3,7 +3,7 @@ import re
 from os.path import dirname, join, abspath
 
 from dptools.cli import BaseCLI
-from dptools.env import get_env, set_custom_env
+from dptools.env import get_env, load
 from dptools.utils import str2typemap
 
 
@@ -72,7 +72,7 @@ class CLI(BaseCLI):
         """
         label = self.get_env_name(env_file)
         if label:
-            set_custom_env(label)
+            load(label)
         else:
             label = "default"
         self.info[label] = get_env()

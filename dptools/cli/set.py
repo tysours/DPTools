@@ -1,7 +1,7 @@
 import os
 
 from dptools.cli import BaseCLI
-from dptools.env import set_model, set_sbatch, set_params, set_custom_env, set_training_params
+from dptools.env import load, set_model, set_sbatch, set_params, set_training_params
 
 
 class CLI(BaseCLI):
@@ -38,7 +38,7 @@ class CLI(BaseCLI):
 
     def main(self, args):
         if args.model_label:
-            set_custom_env(args.model_label)
+            load(args.model_label)
         for i, t in enumerate(args.thing):
             if t.endswith(".pb") and i > 0:
                 self.set(t, n_model=i+1)

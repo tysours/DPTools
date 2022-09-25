@@ -5,7 +5,7 @@ from ase.io import write
 from dptools.train.ensemble import SampleConfigs
 from dptools.cli import BaseCLI
 from dptools.utils import graph2typemap, read_type_map
-from dptools.env import set_custom_env, get_dpfaults
+from dptools.env import load, get_dpfaults
 
 class CLI(BaseCLI):
     """
@@ -67,7 +67,7 @@ class CLI(BaseCLI):
     def load_ensemble(self, ensemble):
         if not ensemble or len(ensemble) == 1:
             if ensemble is not None and len(ensemble) == 1:
-                set_custom_env(ensemble[0])
+                load(ensemble[0])
             defaults = get_dpfaults(key="ensemble")
             self.type_map, *ensemble = defaults
         else:

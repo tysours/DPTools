@@ -7,7 +7,7 @@ from dptools.simulate import Simulations
 from dptools.simulate.parameters import get_parameter_sets
 from dptools.utils import read_type_map
 from dptools.cli import BaseCLI
-from dptools.env import get_dpfaults, set_custom_env
+from dptools.env import get_dpfaults, load
 
 
 class CLI(BaseCLI):
@@ -105,7 +105,7 @@ class CLI(BaseCLI):
                       f"dptools set -m label {model_label}\n"
                 raise ValueError(err)
 
-            set_custom_env(model_label)
+            load(model_label)
 
         self.graph, self.type_map = get_dpfaults()
         self._label = model_label # need for submit_jobs()

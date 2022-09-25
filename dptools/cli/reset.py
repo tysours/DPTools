@@ -1,5 +1,5 @@
 from dptools.cli import BaseCLI
-from dptools.env import set_custom_env, clear, clear_model, set_default_sbatch
+from dptools.env import load, clear, clear_model, set_default_sbatch
 from dptools.hpc import hpc_defaults
 
 
@@ -34,7 +34,7 @@ class CLI(BaseCLI):
 
     def main(self, args):
         if args.model_label:
-            set_custom_env(args.model_label)
+            load(args.model_label)
 
         if args.thing == "all":
             clear(all)

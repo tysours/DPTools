@@ -31,7 +31,7 @@ def get_env():
     return values
 
 
-def set_custom_env(label):
+def load(label):
     """Sets global env file if different from default .env"""
     if label:
         global env_file
