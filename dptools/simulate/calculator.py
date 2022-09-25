@@ -3,7 +3,7 @@ from ase.calculators.calculator import Calculator, all_changes
 from ase.units import GPa
 
 from dptools.simulate.lammps_io import LammpsInput
-#from dptools.utils import graph2typemap
+from dptools.utils import read_type_map, graph2typemap
 
 class LmpCalc(Calculator):
     """
@@ -16,8 +16,8 @@ class LmpCalc(Calculator):
     def __init__(self,
                  type_map=None,
                  minimize=False,
-                 relax_UC=False,
-                 ftol=1e-3,
+                 relax_cell=False,
+                 ftol=1e-2,
                  lmp=None,
                  run_command=None,
                  verbose=False,
@@ -34,12 +34,12 @@ class LmpCalc(Calculator):
                 lmp = lammps.lammps(cmdargs="-screen none".split())
 
         if type_map is not None:
-            self._type_map = type_map
-        if run_command is None:
+            self._type_map = read_type_map(type_map)
+        if run_command is None and not (minimize or relax_cell):
             run_command = ["run 0"]
         elif isinstance(run_command, str):
             run_command = [run_command]
-        elif relax_UC:
+        elif relax_cell:
             run_command = ["fix cellopt all box/relax aniso 1.0",
                            "min_modify norm max",
                            f"minimize 0.0 {ftol} 1000 10000"]
@@ -48,7 +48,7 @@ class LmpCalc(Calculator):
                            f"minimize 0.0 {ftol} 1000 10000"]
         self.lmp = lmp
         self.minimize = minimize
-        self.relax_UC = relax_UC
+        self.relax_cell = relax_cell
         self.ftol = ftol
         self.run_command = run_command
 
@@ -148,11 +148,11 @@ class DeepMD(LmpCalc):
         minimize (bool): Run lammps geometry optimizaiton. Shortcut to be used instead of
             entering the minimize commands in run_command.
 
-        relax_UC (bool): Run lammps unit cell optimization. Shortcut to be used instead of
+        relax_cell (bool): Run lammps unit cell optimization. Shortcut to be used instead of
             entering the box/relax fix and minimize commands in run_command.
 
         ftol (float): Force tolerance for lammps minimize convergence, only used if minimize
-            or relax_UC are set to True.
+            or relax_cell are set to True.
 
         lmp (lammps.core.lammps): lammps instance (from lmp = lammps.lammps()).
             Creates new instance if None specified.
@@ -168,8 +168,8 @@ class DeepMD(LmpCalc):
                  graph,
                  type_map=None,
                  minimize=False,
-                 relax_UC=False,
-                 ftol=1e-3,
+                 relax_cell=False,
+                 ftol=1e-2,
                  lmp=None,
                  run_command=None,
                  verbose=False,
@@ -179,7 +179,7 @@ class DeepMD(LmpCalc):
         super().__init__(
                        type_map=type_map,
                        minimize=minimize,
-                       relax_UC=relax_UC,
+                       relax_cell=relax_cell,
                        ftol=ftol,
                        lmp=lmp,
                        run_command=run_command,
@@ -259,8 +259,8 @@ class ClayFF(LmpCalc):
     def __init__(self,
                  type_map=None,
                  minimize=False,
-                 relax_UC=False,
-                 ftol=1e-3,
+                 relax_cell=False,
+                 ftol=1e-2,
                  lmp=None,
                  run_command=None,
                  verbose=False,
@@ -271,7 +271,7 @@ class ClayFF(LmpCalc):
         super().__init__(
                        type_map=type_map,
                        minimize=minimize,
-                       relax_UC=relax_UC,
+                       relax_cell=relax_cell,
                        ftol=ftol,
                        lmp=lmp,
                        run_command=run_command,
@@ -337,7 +337,7 @@ class ClayFF(LmpCalc):
         self.io.write_input()
         self.lmp.command("clear")
         self.lmp.file("in.atoms")
-        if self.relax_UC:
+        if self.relax_cell:
             self.lmp.command("fix 1 all box/relax tri 1.0")
 
     def _check_cell(self):
@@ -355,8 +355,8 @@ class BKS(LmpCalc):
     def __init__(self,
                  type_map=None,
                  minimize=False,
-                 relax_UC=False,
-                 ftol=1e-3,
+                 relax_cell=False,
+                 ftol=1e-2,
                  lmp=None,
                  run_command=None,
                  verbose=False,
@@ -367,7 +367,7 @@ class BKS(LmpCalc):
         super().__init__(
                        type_map=type_map,
                        minimize=minimize,
-                       relax_UC=relax_UC,
+                       relax_cell=relax_cell,
                        ftol=ftol,
                        lmp=lmp,
                        run_command=run_command,
@@ -445,7 +445,7 @@ class BKS(LmpCalc):
         self.io.write_input()
         self.lmp.command("clear")
         self.lmp.file("in.atoms")
-        if self.relax_UC:
+        if self.relax_cell:
             self.lmp.command("fix 1 all box/relax tri 1.0")
 
     def _check_cell(self):
