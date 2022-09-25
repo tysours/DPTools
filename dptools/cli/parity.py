@@ -38,12 +38,10 @@ class CLI(BaseCLI):
             systems = args.systems
         else:
             systems = self.read_systems()
-        if args.fancy:
-            raise NotImplementedError("Fancy plots coming soon...")
         if args.xyz:
             raise NotImplementedError("Separate xyz components plots coming soon...")
-        evaldpmd = EvaluateDeepMD(systems, dp_graph=args.model)
-        evaldpmd.plot(loss=args.loss_function)
+        evaldp = EvaluateDP(systems, dp_graph=args.model)
+        evaldp.plot(loss=args.loss_function, fancy=args.fancy)
 
     @staticmethod
     def read_systems():
