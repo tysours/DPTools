@@ -21,13 +21,14 @@ In short, the most straightforward way to accomplish this is by using conda,
     $ conda create -n deepmd deepmd-kit=*=*cpu libdeepmd=*=*cpu lammps -c https://conda.deepmodeling.com -c defaults
     $ conda activate deepmd
 
-Or alternatively by downloading and installing the latest offline package from DeePMD-kit's GitHub,
+Or alternatively by downloading and installing the `latest offline package
+<https://github.com/deepmodeling/deepmd-kit/releases>`_ from DeePMD-kit's GitHub,
 
 .. code-block:: console
 
     $ cd /path/to/install
-    $ wget https://github.com/deepmodeling/deepmd-kit/releases/download/v2.1.4/deepmd-kit-2.1.4-cpu-Linux-x86_64.sh
-    $ sh deepmd-kit-2.1.4-cpu-Linux-x86_64.sh
+    $ wget https://github.com/deepmodeling/deepmd-kit/releases/download/v2.1.5/deepmd-kit-2.1.5-cpu-Linux-x86_64.sh
+    $ sh deepmd-kit-2.1.5-cpu-Linux-x86_64.sh
 
 Accept the license and installation path, and then the resulting directory can be activated as a conda environment,
 
