@@ -307,14 +307,12 @@ class Converter:
         traj = []
         for i in self.inputs:
             atoms = self.reader(i, index=self.indices, **kwargs)
-            if len(traj) > 0:
+            if len(traj) > 0 and len(atoms) > 1:
                 # check to see if first image is identical to last image of previous file
                 # primarily for concatenating MD runs from flex/overrun jobs
                 pos1 = traj[-1].positions
                 pos2 = atoms[0].positions
                 if (pos1 == pos2).all():
-                    print(len(atoms))
                     atoms = atoms[1:]
-                    print(len(atoms))
             traj.extend(atoms)
         write(self.output, traj)
