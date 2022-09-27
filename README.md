@@ -22,7 +22,7 @@
 For detailed descriptions on setting up and using DPTools, visit the [official documentation](https://dptools.readthedocs.io).
 
 ## Quick Install
-The current stable version (1.0.0) of DPTools can be installed using `pip` with the following command:
+The current stable version (1.0.1) of DPTools can be installed using `pip` with the following command:
 
 ~~~
 pip install dpmdtools

@@ -45,7 +45,7 @@ Install with pip
 .. note::
    Make sure to activate your deepmd-kit environment before installing DPTools!
 
-The latest stable version (1.0.0) of DPTools can be installed via the ``pip`` command,
+The latest stable version (1.0.1) of DPTools can be installed via the ``pip`` command,
 
 .. code-block:: console
 
