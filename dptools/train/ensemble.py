@@ -140,5 +140,7 @@ class SampleConfigs:
             sns.kdeplot(dev, fill=True, color=color, label=label or "")
             ax.set_ylabel("Density", fontsize=14)
             ax.set_xlabel("$\epsilon_t$ (eV/Å)", fontsize=14)
-        ax.tick_params(labelsize=10)
+        ax.locator_params('both', nbins=5)
+        ax.tick_params(labelsize=12)
+        plt.tight_layout()
         return ax
