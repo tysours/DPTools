@@ -28,6 +28,8 @@ class CLI(BaseCLI):
                 help="Specify path of frozen .pb deepmd model to use")
         self.parser.add_argument("-l", "--loss-function", type=str, default="mse", choices=["mse", "mae", "rmse"],
                 help="Type of loss function to display for parity plot error")
+        self.parser.add_argument("--per-atom", action="store_true",
+                help="Normalize energies per number of atoms")
         self.parser.add_argument("--xyz", action="store_true",
                 help="Plot each xyz force component separately")
         self.parser.add_argument("--fancy", action="store_true",
@@ -38,7 +40,7 @@ class CLI(BaseCLI):
             systems = args.systems
         else:
             systems = self.read_systems()
-        evaldp = EvaluateDP(systems, dp_graph=args.model)
+        evaldp = EvaluateDP(systems, dp_graph=args.model, per_atom=args.per_atom)
         evaldp.plot(loss=args.loss_function, xyz=args.xyz, fancy=args.fancy)
 
     @staticmethod

@@ -21,14 +21,19 @@ class EvaluateDP:
 
         dp_graph (str): Path to deepmd model to use for DP predictions.
 
+        per_atom (bool): If True, normalize all energies per number of atoms. False uses
+            raw energies for parity plot and loss function evaluations.
+
         save_plot (bool): Save parity plot to parity.png if True.
     """
 
-    def __init__(self, test_sets, dp_graph="graph.pb", save_plot=False):
+    def __init__(self, test_sets, dp_graph="graph.pb", per_atom=False, save_plot=False):
         from deepmd.infer import DeepPot as DP
         self.dp = DP(dp_graph)
         if isinstance(test_sets, str):
             test_sets = [test_sets]
+
+        self._per_atom = per_atom
 
         self.energies = []
         self.forces = []
@@ -72,6 +77,9 @@ class EvaluateDP:
             virials = None
 
         energies = np.append(e_dft[:, np.newaxis], e_dp[:, np.newaxis], axis=1)
+        if self._per_atom:
+            n_atoms = len(atype)
+            energies /= n_atoms
         forces = np.append(f_dft[:, np.newaxis], f_dp[:, np.newaxis], axis=1)
         return energies, forces, virials
 
@@ -102,9 +110,9 @@ class EvaluateDP:
         err = getattr(self, f"get_{loss.lower()}")(data)
         if not fancy:
             ax.plot(data[:, 0], data[:, 1], "o", ms=3, color=color, alpha=0.20)
-            self.plot_yx(data[:, 0], ax)
         else:
-            density_scatter(data[:, 0], data[:, 1], ax=ax)
+            density_scatter(data[:, 0], data[:, 1], ax=ax, zorder=10)
+        self.plot_yx(data[:, 0], ax)
         ax.annotate(f"{loss.upper()} = {err:.3e}", xy=(0.1, 0.85),
                 xycoords="axes fraction", fontsize=12)
         ax.set_ylabel(f"DP {label}", fontsize=14)
@@ -139,7 +147,8 @@ class EvaluateDP:
         e_data = np.vstack(self.energies)
         f_data = np.vstack(self.forces)
 
-        self.plot_parity(e_data, "Energy (eV)", colors[3], loss=loss, ax=axs[0])
+        e_units = "eV" if not self._per_atom else "eV/atom"
+        self.plot_parity(e_data, f"Energy ({e_units})", colors[3], loss=loss, ax=axs[0])
         if not xyz:
             self.plot_parity(f_data, "Force (eV/Å)", colors[0], loss=loss, ax=axs[1], fancy=fancy)
         else:
@@ -172,7 +181,7 @@ def density_scatter(x, y, ax=None, bins=300, **kwargs):
         ax (matplotlib.axes.Axes): Axes object to plot on.
         bins (int): Number of bins to partition off x y values into. Passed to
             np.histogram2d(bins=bins).
-        **kwargs: Any additional keyword-args for matplotlib.pyplot.scatter method.
+        **kwargs: Any additional keyword-args for matplotlib.pyplot.scatter().
     """
     from scipy.interpolate import interpn
     if ax is None:
