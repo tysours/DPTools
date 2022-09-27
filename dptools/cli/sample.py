@@ -44,7 +44,9 @@ class CLI(BaseCLI):
         self.parser.add_argument("-o", "--output", nargs=1, type=str, default="new_configs.traj",
                 help="File to write new configurations to")
         self.parser.add_argument("-p", "--plot-dev", action="store_true",
-                help="Plot max force deviation of model ensemble for each config")
+                help="Plot histogram of max force deviation of model ensemble for each config")
+        self.parser.add_argument("--plot-steps", action="store_true",
+                help="Plot dev versus number of steps")
 
 
     def main(self, args):
@@ -61,8 +63,8 @@ class CLI(BaseCLI):
 
             os.chdir(wd)
 
-        if args.plot_dev:
-            self.plot()
+        if args.plot_dev or args.plot_steps:
+            self.plot(steps=args.plot_steps)
 
     def load_ensemble(self, ensemble):
         if not ensemble or len(ensemble) == 1:
@@ -92,11 +94,11 @@ class CLI(BaseCLI):
         self.devs.append(self.sampler.dev)
         write(self.outfile, new_configs)
 
-    def plot(self):
+    def plot(self, steps=False):
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots(figsize=(5.5, 4))
         for dev, _dir in zip(self.devs, self.dirs):
-            ax = self.sampler.plot(dev=dev, ax=ax, label=os.path.relpath(_dir))
+            ax = self.sampler.plot(dev=dev, steps=steps, ax=ax, label=os.path.relpath(_dir))
         if len(self.dirs) > 1:
             ax.legend()
         plt.show()
