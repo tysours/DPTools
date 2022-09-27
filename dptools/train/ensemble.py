@@ -48,8 +48,10 @@ class SampleConfigs:
 
     def get_dev(self):
         if "dev.npy" in os.listdir():
-            print(f"Reading dev from {os.path.abspath('dev.npy')} ...")
-            return np.load("dev.npy")
+            old_dev = np.load("dev.npy")
+            if len(old_dev) == len(self.configs): # only read dev if configs haven't changed
+                print(f"Reading dev from {os.path.abspath('dev.npy')} ...")
+                return old_dev
 
         from deepmd.infer import calc_model_devi
         from deepmd.infer import DeepPot as DP
@@ -104,13 +106,21 @@ class SampleConfigs:
         new_configs = [self.configs[i] for i in i_new_configs]
         return new_configs
 
-    def plot(self, dev=None, ax=None, color=None, label=None):
+    def plot(self, dev=None, steps=False, ax=None, color=None, label=None):
         """
         Create kernel density estimation plot (fancy smooth histogram) for
         all eps_t values in configs input.
 
         Requires seaborn python package to be installed!
         https://seaborn.pydata.org
+
+        Args:
+            dev (array-like): Optional list of dev values to plot, calculate if None given.
+            steps (bool): If False, plot histogram of dev values. If True, plot dev versus
+                step number (divided by write_freq).
+            ax (Axes): Specific mpl Axes to plot on.
+            color (str): Color to use for plot.
+            label (str): Label to use for legend entry.
         """
         import matplotlib.pyplot as plt
         import seaborn as sns
@@ -122,8 +132,13 @@ class SampleConfigs:
         ax = plt.gca() if ax is None else ax
         color = next_color() if color is None else color
 
-        sns.kdeplot(dev, fill=True, label=label or "")
-        ax.set_ylabel("Density", fontsize=14)
-        ax.set_xlabel("$\epsilon_t$ (eV/Å)", fontsize=14)
+        if steps:
+            ax.set_xlabel("Steps / write_freq", fontsize=14)
+            ax.set_ylabel("$\epsilon_t$ (eV/Å)", fontsize=14)
+            plt.plot(np.arange(len(dev)), dev, '-', color=color, label=label or "")
+        else:
+            sns.kdeplot(dev, fill=True, color=color, label=label or "")
+            ax.set_ylabel("Density", fontsize=14)
+            ax.set_xlabel("$\epsilon_t$ (eV/Å)", fontsize=14)
         ax.tick_params(labelsize=10)
         return ax
