@@ -32,11 +32,20 @@ class CLI(BaseCLI):
         )
         self.parser.add_argument("-i", "--indices", type=str, default=":",
                 help="Indices of input files to read. E.g., :10, -3:, :100:5")
+        self.parser.add_argument("-r", "--repeat", type=str, default=None,
+                help="Repeat each input before writing to output (e.g., 222)")
 
     def main(self, args):
         converter = Converter(args.inputs, args.output[0], args.indices)
         self.get_kwargs(args.inputs)
-        converter.convert(**self.kwargs)
+        converter.read(**self.kwargs)
+        if args.repeat:
+            if len(args.repeat) != 3:
+                raise ValueError("Need 3 numbers for repeat arg - e.g., 222")
+            repeat = [int(i) for i in args.repeat]
+            for i, atoms in enumerate(converter.atoms):
+                converter.atoms[i] = atoms.repeat(repeat)
+        converter.convert()
 
     def get_kwargs(self, inputs):
         self.kwargs = {}
