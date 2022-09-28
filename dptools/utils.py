@@ -25,6 +25,7 @@ def _generate_color():
     for color in colors:
         yield color
 
+
 _gen_color = _generate_color()
 def next_color():
     """
@@ -127,6 +128,7 @@ def convert_dump_cell(lammps_cell):
     shift = np.array([xlo, ylo, zlo])
     return cell, shift
 
+
 def read_db(db_name, indices):
     """
     Reads ase db and returns entries as list of Atoms objects.
@@ -143,6 +145,7 @@ def read_db(db_name, indices):
         traj = [row.toatoms() for row in db.select()]
     return traj[string2index(indices)]
 
+
 def graph2typemap(graph):
     """
     Determine type_map for a given deepmd model.
@@ -157,6 +160,7 @@ def graph2typemap(graph):
     dp = DeepPotential(graph)
     type_map = {sym: i for i, sym in enumerate(dp.get_type_map())}
     return type_map
+
 
 def read_type_map(type_map_json):
     if isinstance(type_map_json, dict):
@@ -174,6 +178,7 @@ def read_type_map(type_map_json):
             msg = f"Unknown type_map format provided: {type_map_json}"
         raise TypeError(msg)
     return check_type_map(type_map)
+
 
 def check_type_map(type_map_dict):
     # I'm inconsistent with key-value/value-key when writing type_map
@@ -193,10 +198,12 @@ def typemap2str(type_map_dict):
     tm_str = ",".join([f"{k}:{v}" for k, v in type_map.items()])
     return tm_str
 
+
 def str2typemap(tm_str):
     items = tm_str.split(",")
     type_map = {i.split(":")[0]: int(i.split(":")[-1]) for i in items}
     return type_map
+
 
 def randomize_seed(in_json):
     """
@@ -220,6 +227,7 @@ def randomize_seed(in_json):
     in_json["training"]["seed"] = seeds[2]
     return in_json
 
+
 def get_seed(max_val=999999, n=1):
     """
     Returns:
@@ -232,12 +240,14 @@ def get_seed(max_val=999999, n=1):
         seed = np.random.randint(max_val) # avoids single item array
     return seed
 
+
 def columnize(*data):
     """
     Takes lists or 1D arrays and concatenates everything into columnized array.
     Basically just np.column_stack without needing a single tuple arg (i.e. slightly useless).
     """
     return np.array(list(data)).T
+
 
 class Converter:
     """
@@ -303,16 +313,20 @@ class Converter:
             raise NotImplementedError(f"supported types:\t{types}\nharass me for others")
         return ftype
 
-    def convert(self, **kwargs):
-        traj = []
+    def read(self, **kwargs):
+        self.atoms = []
         for i in self.inputs:
             atoms = self.reader(i, index=self.indices, **kwargs)
-            if len(traj) > 0 and len(atoms) > 1:
+            if len(self.atoms) > 0 and len(atoms) > 1:
                 # check to see if first image is identical to last image of previous file
                 # primarily for concatenating MD runs from flex/overrun jobs
-                pos1 = traj[-1].positions
+                pos1 = self.atoms[-1].positions
                 pos2 = atoms[0].positions
                 if (pos1 == pos2).all():
                     atoms = atoms[1:]
-            traj.extend(atoms)
-        write(self.output, traj)
+            self.atoms.extend(atoms)
+
+    def convert(self, **kwargs):
+        if not hasattr(self, "atoms"):
+            self.read(**kwargs)
+        write(self.output, self.atoms)
