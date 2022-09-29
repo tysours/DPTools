@@ -16,6 +16,7 @@ class CLI(BaseCLI):
     .. code-block:: console
 
         $ dptools get cellopt
+        $ dptools get list # see available calculation options
         $ dptools get nvt-md
         $ dptools get nvt-md.900K # custom simulation params
         $ dptools get in.json # get training param file
@@ -38,6 +39,14 @@ class CLI(BaseCLI):
             return
 
         param_sets = get_parameter_sets()
+        if args.calculation == "list":
+            print()
+            print("# Available calculation types:")
+            for key in param_sets.keys():
+                print(key)
+            print()
+            return
+
         params = param_sets[args.calculation]
         with open("params.yaml", "w") as file:
             write_yaml(params, file)
