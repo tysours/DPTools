@@ -5,21 +5,14 @@ import os
 
 # defaults for Kulkarni group hpc systems
 hpc_defaults = {
-        "cori10": {
+        "cori": {
             "SBATCH_COMMENT": "#SBATCH -J job -q shared -N 1 -t 11:00:00 "\
                 "-C haswell --output=job.out --error=job.err --ntasks=1 -c 1",
             "OMP_NUM_THREADS": "1",
             "TF_INTRA_OP_PARALLELISM_THREADS": "1",
             "TF_INTER_OP_PARALLELISM_THREADS": "1"
             },
-        "hpc1": {
-            "SBATCH_COMMENT": "#SBATCH --partition=med -N 1 --ntasks-per-node=8 "\
-                "--output=job.out --error=job.err -t 96:00:00",
-            "OMP_NUM_THREADS": "8",
-            "TF_INTRA_OP_PARALLELISM_THREADS": "6",
-            "TF_INTER_OP_PARALLELISM_THREADS": "2"
-            },
-        "hpc2": {
+        "hpc": {
             "SBATCH_COMMENT": "#SBATCH --partition=med -N 1 --ntasks-per-node=8 "\
                 "--output=job.out --error=job.err -t 96:00:00",
             "OMP_NUM_THREADS": "8",
