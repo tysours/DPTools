@@ -85,7 +85,7 @@ class CLI(BaseCLI):
         else:
             param_sets = get_parameter_sets()
             params = param_sets[calc_arg]
-        self.calc_type = params.pop("type").split(".")[0]
+        self.calc_type = params.pop("type").split(".", 1)[0]
         self.params = params
         self.calc_arg = calc_arg # needed for rewriting dptools command in job submission script
 

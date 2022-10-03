@@ -8,6 +8,7 @@ be used in your python scripts as well. Slightly confusing usage with global env
 so use at your own risk.
 """
 import os
+import re
 import json
 import socket
 import dotenv
@@ -32,7 +33,9 @@ def get_env():
 
 
 def load(label):
-    """Sets global env file if different from default .env"""
+    """Sets global env file if different from default .env. Used to load custom
+    envs essentially.
+    """
     if label:
         global env_file
         env_file = default_env_file + "." + label
@@ -81,7 +84,7 @@ def set_default_sbatch(warn=True):
     Sets Slurm parameters from dptools.hpc.hpc_defaults. Mostly used by CLI when
     no Slurm info has been set to env.
     """
-    host = socket.gethostname()
+    host = re.sub("[^a-z]*", "", socket.gethostname())
     try:
         for k, v in hpc_defaults[host].items():
             set_env(k, str(v))
