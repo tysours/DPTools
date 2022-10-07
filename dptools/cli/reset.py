@@ -1,6 +1,7 @@
 from dptools.cli import BaseCLI
 from dptools.env import load, clear, clear_model, set_default_sbatch
 from dptools.hpc import hpc_defaults
+from dptools.simulate.parameters import reset_params
 
 
 # TODO: Add reset params or reset {calculation_type} (e.g. nvt-md) in case
@@ -25,7 +26,7 @@ class CLI(BaseCLI):
         self.parser.add_argument(
             "thing",
             type=str,
-            choices=("all", "sbatch", "model"),
+            choices=("all", "sbatch", "model", "params"),
             help="Thing to reset (delete or set to default if exists)"\
                 " (all, sbatch, model)"
         )
@@ -42,3 +43,5 @@ class CLI(BaseCLI):
             set_default_sbatch(warn=False)
         elif args.thing == "model":
             clear_model()
+        elif args.thing == "params":
+            reset_params()

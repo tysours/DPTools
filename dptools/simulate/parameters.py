@@ -3,8 +3,9 @@ Functions for interacting with simulation parameter files (.yaml).
 If adding a new simulation parameter, add a description/usage hint to
 dptools.parameters.descriptions, and the hint will appear in params.yaml.
 """
-from ruamel.yaml import YAML
 import os
+import requests
+from ruamel.yaml import YAML
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 param_file = os.path.join(basedir, "parameter_sets.yaml")
@@ -77,5 +78,13 @@ def set_parameter_set(param_dict):
     parameter_sets = get_parameter_sets()
     calc_type = param_dict.get("type")
     parameter_sets[calc_type] = param_dict
+    with open(param_file, "w") as file:
+        YAML().dump(parameter_sets, file)
+
+
+def reset_params():
+    url = "https://github.com/tysours/DPTools/raw/main/dptools/simulate/parameter_sets.yaml"
+    req = requests.get(url, allow_redirects=True)
+    parameter_sets = YAML().load(req.content)
     with open(param_file, "w") as file:
         YAML().dump(parameter_sets, file)
