@@ -18,6 +18,8 @@ Here is the complete list of dptools CLI commands. General usage follows the pat
 
     $ dptools command [optional_args] required_args
 
+Check each command page for detailed information and common scenarios/examples
+for when it can be used.
 
 .. toctree::
     :maxdepth: 1
