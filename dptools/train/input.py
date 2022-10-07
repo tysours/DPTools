@@ -7,6 +7,7 @@ import json
 import numpy as np
 from ase.db import connect
 from ase.io import read
+from ase.data import atomic_numbers
 from ase.io.formats import string2index
 from sklearn.utils import shuffle
 
@@ -57,11 +58,12 @@ class DeepInput:
         box = []
         n = self.n
 
-        if self.atoms_file.endswith(".db"):
+        if self.atoms_file.endswith(".db"): # TODO: Rework this mess
             with connect(self.atoms_file) as db:
                 for row in db.select():
                     if not hasattr(self, "atoms"):
                         self.atoms = row.toatoms() # saving for atom typing
+                    self._check_indexing(list(row.numbers))
                     positions.append(row.positions.flatten())
                     forces.append(row.forces.flatten())
                     energies.append(row.energy)
@@ -71,6 +73,7 @@ class DeepInput:
             for atoms in all_atoms:
                 if not hasattr(self, "atoms"):
                     self.atoms = atoms.copy() # saving for atom typing
+                self._check_indexing(list(row.numbers))
                 positions.append(atoms.positions.flatten())
                 forces.append(atoms.get_forces().flatten())
                 energies.append(atoms.get_potential_energy())
@@ -92,6 +95,21 @@ class DeepInput:
         self.energies = energies
         self.forces = forces
         self.box = box
+
+    def _check_indexing(self, numbers):
+        if not hasattr(self, "_ref"):
+            self._ref = list(self.atoms.numbers)
+            return
+        if self._ref != numbers:
+            if len(self._ref) != len(numbers):
+                err = f"Multiple unique systems detected for {self.atoms_file}."
+            else:
+                err = f"Inconsistent indexing detected for {self.atoms_file}."
+            symbol_map = {v: k for k, v in atomic_numbers.items()}
+            ref_syms = [symbol_map[n] for n in self._ref]
+            syms = [symbol_map[n] for n in numbers]
+            err += f"\nConflicting system indices:\n\n{ref_syms}\n\n{syms}"
+            raise Exception(err)
 
     def write_input(self):
         if self.system_name is None:
