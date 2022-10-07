@@ -7,4 +7,7 @@ The list will be updated periodically as the userbase grows and more issues occu
 
 .. toctree::
 
+   dft_convergence
    bad_parity
+   new_default_params
+   
