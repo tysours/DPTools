@@ -101,14 +101,15 @@ class EvaluateDP:
         ax.set_xlim([xmin, xmax])
         ax.set_ylim([xmin, xmax])
 
-    def plot_parity(self, data, label, color, loss="mse", ax=None, fancy=False):
+    def plot_parity(self, data, label, color, loss="mse", ax=None, fancy=False, rasterized=False):
         if ax is None:
             ax = plt.gca()
         err = getattr(self, f"get_{loss.lower()}")(data)
         if not fancy:
-            ax.plot(data[:, 0], data[:, 1], "o", ms=3, color=color, alpha=0.20)
+            ax.plot(data[:, 0], data[:, 1], "o", ms=3, color=color, alpha=0.20,
+                    rasterized=rasterized)
         else:
-            density_scatter(data[:, 0], data[:, 1], ax=ax, zorder=10)
+            density_scatter(data[:, 0], data[:, 1], ax=ax, zorder=10, rasterized=rasterized)
         self.plot_yx(data[:, 0], ax)
         ax.annotate(f"{loss.upper()} = {err:.3e}", xy=(0.1, 0.85),
                 xycoords="axes fraction", fontsize=12)
@@ -116,7 +117,7 @@ class EvaluateDP:
         ax.set_xlabel(f"DFT {label}", fontsize=14)
         ax.tick_params(labelsize=12)
 
-    def plot(self, loss="mse", axs=None, xyz=False, fancy=False, save_file=None):
+    def plot(self, loss="mse", axs=None, xyz=False, fancy=False, save_file=None, rasterized=False):
         """
         Plot energy, force, and virial (if available) parity plots for DP predictions.
 
@@ -147,19 +148,21 @@ class EvaluateDP:
         e_units = "eV" if not self._per_atom else "eV/atom"
         self.plot_parity(e_data, f"Energy ({e_units})", colors[3], loss=loss, ax=axs[0])
         if not xyz:
-            self.plot_parity(f_data, "Force (eV/Å)", colors[0], loss=loss, ax=axs[1], fancy=fancy)
+            self.plot_parity(f_data, "Force (eV/Å)", colors[0], loss=loss, ax=axs[1], fancy=fancy,
+                    rasterized=rasterized)
         else:
             self.plot_parity(f_data[::3, :], "F$_x$ (eV/Å)", colors[0],
-                    loss=loss, ax=axs[1], fancy=fancy)
+                    loss=loss, ax=axs[1], fancy=fancy, rasterized=rasterized)
 
             self.plot_parity(f_data[1::3, :], "F$_y$ (eV/Å)", colors[0],
-                    loss=loss, ax=axs[2], fancy=fancy)
+                    loss=loss, ax=axs[2], fancy=fancy, rasterized=rasterized)
 
             self.plot_parity(f_data[2::3, :], "F$_z$ (eV/Å)", colors[0],
-                    loss=loss, ax=axs[3], fancy=fancy)
+                    loss=loss, ax=axs[3], fancy=fancy, rasterized=rasterized)
 
         if len(axs) in [3, 5]:
-            self.plot_parity(v_data, "Virial", colors[2], loss=loss, ax=axs[-1])
+            self.plot_parity(v_data, "Virial", colors[2], loss=loss, ax=axs[-1],
+                    rasterized=rasterized)
         plt.tight_layout()
         plt.subplots_adjust(wspace=0.3)
         if save_file:

@@ -30,6 +30,8 @@ class CLI(BaseCLI):
                 help="Type of loss function to display for parity plot error")
         self.parser.add_argument("-s", "--save-plot", type=str, metavar="file_name",
                 help="Name of file (with extension) to save parity plot to.")
+        self.parser.add_argument("-r", "--rasterized", action="store_true",
+                help="Rasterize plot data to reduce size of file")
         self.parser.add_argument("--per-atom", action="store_true",
                 help="Normalize energies per number of atoms")
         self.parser.add_argument("--xyz", action="store_true",
@@ -48,6 +50,7 @@ class CLI(BaseCLI):
                 xyz=args.xyz,
                 fancy=args.fancy,
                 save_file=args.save_plot,
+                rasterized=args.rasterized,
             )
 
     @staticmethod
