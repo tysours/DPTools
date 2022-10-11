@@ -11,7 +11,21 @@ General usage,
 
 .. code-block:: console
 
-   $ dptools convert [-h] [-i INDICES] input [input ...] output
+   $ dptools convert [-h] [-i INDICES] [-r REPEAT] input [input ...] output
+
+.. code-block:: bash
+
+   positional arguments:
+     input                 Input files (with extensions) to convert. Multiple inputs are concatenated into output
+     output                Output file name to write conversion to (with extension)
+
+   optional arguments:
+     -h, --help            show this help message and exit
+     -i INDICES, --indices INDICES
+                           Indices of input files to read. E.g., :10, -3:, :100:5 (default: :)
+     -r REPEAT, --repeat REPEAT
+                           Repeat each input before writing to output (e.g., 222) (default: None)
+
 
 Quick reference examples
 ------------------------
@@ -23,6 +37,7 @@ Quick reference examples
    $ dptools convert md_???/vasprun.xml full_md.traj # equivalent to above
    $ dptools convert 0*/vasp_spe.traj all_spe.traj
    $ dptools convert -i ::10 vasprun.xml condensed_traj.traj
+
 
 Simple file type conversion
 ---------------------------
