@@ -23,11 +23,9 @@ class EvaluateDP:
 
         per_atom (bool): If True, normalize all energies per number of atoms. False uses
             raw energies for parity plot and loss function evaluations.
-
-        save_plot (bool): Save parity plot to parity.png if True.
     """
 
-    def __init__(self, test_sets, dp_graph="graph.pb", per_atom=False, save_plot=False):
+    def __init__(self, test_sets, dp_graph="graph.pb", per_atom=False):
         from deepmd.infer import DeepPot as DP
         self.dp = DP(dp_graph)
         if isinstance(test_sets, str):
@@ -47,7 +45,6 @@ class EvaluateDP:
                 self.virials.append(virials)
 
         self.set_mse()
-        self.save = save_plot
 
     def set_mse(self):
         self.all_mse = [[self.get_mse(e), self.get_mse(f)]
@@ -119,7 +116,7 @@ class EvaluateDP:
         ax.set_xlabel(f"DFT {label}", fontsize=14)
         ax.tick_params(labelsize=12)
 
-    def plot(self, loss="mse", axs=None, xyz=False, fancy=False):
+    def plot(self, loss="mse", axs=None, xyz=False, fancy=False, save_file=None):
         """
         Plot energy, force, and virial (if available) parity plots for DP predictions.
 
@@ -165,8 +162,8 @@ class EvaluateDP:
             self.plot_parity(v_data, "Virial", colors[2], loss=loss, ax=axs[-1])
         plt.tight_layout()
         plt.subplots_adjust(wspace=0.3)
-        if self.save:
-            plt.savefig("parity.png")
+        if save_file:
+            plt.savefig(save_file)
         else:
             plt.show()
 
