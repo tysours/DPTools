@@ -13,6 +13,16 @@ General usage,
 
    $ dptools get [-h] simulation
 
+.. code-block:: bash
+
+   positional arguments:
+     simulation  Simulation type to generate params.yaml file (spe, opt, cellopt, nvt-md, npt-md, eos, vib).
+                 Can also specify label of saved simulations (e.g. nvt-md.label)
+   
+   optional arguments:
+     -h, --help  show this help message and exit
+
+
 Quick reference examples
 ------------------------
 
@@ -23,6 +33,7 @@ Quick reference examples
    $ dptools get nvt-md
    $ dptools get nvt-md.900K # custom simulation params
    $ dptools get in.json # get training param file
+
 
 View available simulation types
 -------------------------------

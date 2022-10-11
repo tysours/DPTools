@@ -16,6 +16,17 @@ General usage,
 
    $ dptools set [-h] [-m MODEL_LABEL] thing [thing ...]
 
+.. code-block:: bash
+
+   positional arguments:
+     thing                 Path to DP model, params.yaml, or {script}.sh to set as default. Need .pb, .yaml, or .sh extension to set model, params, or sbatch, respectively.
+   
+   optional arguments:
+     -h, --help            show this help message and exit
+     -m MODEL_LABEL, --model-label MODEL_LABEL
+                           Save model/sbatch with specific label to access during 'dptools run -m {label} {calc} {structure}' (default: None)
+
+
 .. note::
 
    To see information on all set models and sbatch parameters, use the ``dptools info``

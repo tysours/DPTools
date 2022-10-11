@@ -11,6 +11,14 @@ General usage,
 
    $ dptools info [-h] [-m MODEL_LABEL]
 
+.. code-block:: bash
+
+   optional arguments:
+     -h, --help            show this help message and exit
+     -m MODEL_LABEL, --model-label MODEL_LABEL
+                           Label of specific model to use (see dptools set -h) (default: all)
+
+
 Quick reference examples
 ------------------------
 
