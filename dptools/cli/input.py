@@ -21,7 +21,7 @@ class CLI(BaseCLI):
     """
     help_info = "Set up deepmd-kit training input from ASE/VASP output"
     def add_args(self):
-        self.parser.add_argument("inputs", nargs='+', metavar="input",
+        self.parser.add_argument("inputs", nargs='+', metavar="input_file",
                 help=".db, .traj, or vasprun.xml files")
         self.parser.add_argument("-n", type=int, default=None,
                 help="Max number of images to take from each db")
