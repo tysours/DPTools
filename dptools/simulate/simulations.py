@@ -97,6 +97,50 @@ class Simulation:
         np.save(os.path.join(self.path, name), data)
 
 
+class NewSimulation(Simulation):
+    """
+    Template/example for making new simulation types in lammps.
+
+    Args:
+        setup_arg1: Argument from params.yaml that is passed to setup method
+        setup_arg2: Argument from params.yaml that is passed to setup method
+        param_arg1: Argument from params.yaml that is passed to get_commands method
+        param_arg2: Argument from params.yaml that is passed to get_commands method
+    """
+
+    def setup(self, setup_arg1=None, setup_arg2=None, **kwargs):
+        """
+        Simulation specific method to do any needed setup before running (e.g., cell deformations).
+        Must call self.get_commands() method.
+        """
+
+        # do stuff with setup args here
+
+        # then set commands
+        self.commands = self.get_commands(**kwargs)
+
+    def get_commands(self, **kwargs):
+        self._warn_unused(**kwargs) # warn about any unused kwargs from params.yaml
+
+        # set all simulation lammps commands (besides initial setup, e.g. unit styles)
+        commands = ["run 0"]
+        return commands
+
+    def run(self, file_out=None):
+        """
+        Rarely need subclass run method. Test without it and if Simulation.run fails
+        for whatever reason, write your own run method.
+        """
+        pass
+
+    def process(self, file_out=None):
+        """
+        Only needed if additional proceessing from lammps output is necessary.
+        Also useful for printing results summaries.
+        """
+        pass
+
+
 class SPE(Simulation):
     """Simple single point energy calculation, not much to it."""
     calc_type = "spe"
