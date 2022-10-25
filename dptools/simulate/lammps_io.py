@@ -146,13 +146,13 @@ class LammpsInput:
         self.write_cell()
         self.write_types()
         self.write_coords()
+        self.write_constraints(atoms)
 
         for key in ["bonds", "angles", "dihedrals", "impropers"]:
             self.write_geometry(key)
 
         datatemp = DataTemplate(f"data.{self.name}", self)
         datatemp.write()
-
 
     def write_cell(self):
         """Transform and write self.atoms' ``ase.cell.Cell`` to lammps data file."""
@@ -194,6 +194,16 @@ class LammpsInput:
                 #coords_str += f" {a.index + 1} {a.tag} {x} {y} {z}\n"
 
         self.coords = coords_str
+
+    def write_constraints(self, atoms):
+        if not atoms.constraints:
+            self.constraints = ""
+            return
+        indices = atoms.constraints[0].get_indices().copy()
+        indices += np.ones(len(indices), dtype="int64")
+        constrained = " ".join(list(map(str, indices)))
+        self.constraints = f"group constrained id {constrained}"
+        self.constraints += "\nfix constraints constrained setforce 0.0 0.0 0.0"
 
     def write_geometry(self, key):
         """
@@ -441,6 +451,8 @@ class InputTemplate(Template):
 
         box tilt\tlarge
         read_data\tdata.<name>
+
+        <constraints>
 
         <pair_coeff>
 
