@@ -83,7 +83,7 @@ class Simulation:
         Opts = {0: Opt, 1: CellOpt}
         commands = Opts[cell].get_commands(self, nsw=nsw, ftol=ftol)
 
-        self.run(process=False, commands=commands)
+        Simulation.run(self, process=False, commands=commands)
 
         file_out = os.path.join(self.path, "pre_opt.traj")
         write(file_out, self.atoms)
