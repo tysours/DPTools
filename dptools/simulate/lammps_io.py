@@ -352,6 +352,43 @@ class LammpsInput:
         raise NotImplementedError("Harass me if you need this.")
 
 
+class MolInput:
+    """
+    Class for writing simple molecule files in lammps for deepmd.
+
+    TODO: add bonds, charges, etc. for future applications
+
+    Args:
+        atoms (ase.Atoms): Atoms object of molecule to write.
+
+        type_dict (dict): map atom type index to element symbol
+                   (Element_tag to specify multiple types of same element)
+                   e.g., {1: 'O', 2: 'Si', 3: 'O_h2o', 4: 'H_h2o'}
+
+        name (str): Name of molecule for saving file (mol.name)
+    """
+    def __init__(self, atoms, type_dict, name="mol"):
+        self.atoms = atoms
+        self.type_dict = type_dict
+        self.name = name
+
+    def write(self):
+        self.write_atoms()
+        moltemp = MolTemplate(f"mol.{self.name}", self)
+        moltemp.write()
+
+    def write_atoms(self):
+        self.natoms = len(self.atoms)
+        coords = "Coords\n\n"
+        types = "Types\n\n"
+
+        for a, (x, y, z) in zip(self.atoms, self.atoms.positions):
+            coords += f"{a.index + 1}\t\t{x}\t{y}\t{z}\n"
+            types += f"{a.index + 1}\t\t{a.tag}\n"
+
+        self.coords = coords
+        self.types = types
+
 
 class Template:
     """
@@ -464,4 +501,16 @@ class InputTemplate(Template):
 
         <groups>
         thermo_style custom step temp etotal pe press pxx pyy pzz pxy pxz pyz lx ly lz vol
+        ''')
+
+
+class MolTemplate(Template):
+    text = dedent('''
+        <natoms> atoms
+        0 bonds
+        0 angles
+
+        <coords>
+
+        <types>
         ''')
