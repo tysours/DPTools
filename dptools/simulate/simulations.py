@@ -4,6 +4,7 @@ from ase import units
 from ase.io import read, write
 
 from dptools.simulate.calculator import DeepMD
+from dptools.simulate.lammps_io import MolInput
 from dptools.utils import read_dump, columnize
 from dptools.utils import get_seed as seed
 
@@ -365,6 +366,59 @@ class Vib(Simulation):
             print(f"Mode {j}: {abs(f):.2f}{i}")
 
 
+class GCMC(Simulation):
+    """Grand-canonical monte carlo simulation."""
+    calc_type = "gcmc"
+
+    def setup(self, molecule="H2O", pre_opt=False, pre_opt_mol=False, **kwargs):
+        if os.path.isfile(molecule):
+            mol = read(molecule)
+        else:
+            from ase import build
+            mol = build.molecule(molecule)
+        if mol.cell.sum() == 0.0: # need cell or lammps crashes
+            mol.cell = self.atoms[0].cell.copy()
+
+        mol_tags = [self.type_map[m.symbol] + 1 for m in mol] # tag types for lammps mol writer
+        mol.set_tags(mol_tags)
+
+        self._mol = mol.get_chemical_formula().lower() # save for naming files
+
+        if pre_opt_mol:
+            optmol = Opt(mol,
+                         self.graph,
+                         self.type_map,
+                         file_out=f"{self._mol}.traj",
+                         path=self.path,
+                         nsw=200,
+                         )
+            optmol.run()
+
+        molin = MolInput(mol, self.type_map, name=self._mol)
+        molin.write() # write lammps molecule file
+
+        if pre_opt:
+            self.pre_opt(200, cell=True)
+
+        self.commands = self.get_commands(**kwargs)
+
+    def get_commands(self, steps=100, n_ex=10, n_mc=10, T=298.0, P=1.0, dmax=1.0, equil_steps=0, write_freq=1, disp_freq=5, **kwargs):
+        self._warn_unused(**kwargs)
+
+        commands = [
+                f"molecule mol mol.{self._mol}",
+                f"group {self._mol} molecule 0",
+                f"fix dpgcmc {self._mol} gcmc 1 {n_ex} {n_mc} 0 {seed()} "\
+                        f"{T} 0.0 {dmax} mol mol pressure {P} full_energy",
+                f"thermo {disp_freq}",
+                f"run {equil_steps}",
+                f"dump 1 all custom {write_freq} gcmc.dump id type x y z",
+                f"run {steps}",
+                ]
+
+        return commands
+
+
 Simulations = {
     "spe": SPE,
     "opt": Opt,
@@ -373,4 +427,5 @@ Simulations = {
     "npt-md": NPT,
     "eos": EOS,
     "vib": Vib,
+    "gcmc": GCMC,
 }
