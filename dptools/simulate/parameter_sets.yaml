@@ -50,3 +50,17 @@ vib:
   type: vib
   delta: 0.015
   pre_opt: true
+gcmc:
+  type: gcmc
+  molecule: H2O
+  steps: 100
+  n_ex: 10
+  n_mc: 10
+  T: 298.0
+  P: 0.1
+  dmax: 1.0
+  equil_steps: 0
+  write_freq: 1
+  disp_freq: 5
+  pre_opt: false
+  pre_opt_mol: false
