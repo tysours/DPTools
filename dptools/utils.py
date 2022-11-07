@@ -129,6 +129,52 @@ def convert_dump_cell(lammps_cell):
     return cell, shift
 
 
+def tag_groups(atoms, mult=1.0, retag=True):
+    """
+    Takes Atoms object of disconnected groups (e.g. adsorbates in MOF) and assigns a unique tag
+    to each group. Returns list of nested lists with indices corresponding to each tag
+
+    Args:
+        atoms (ase.Atoms): Atoms object to tag.
+        mult (float): Coefficient for adjusting neighbor search distances
+            (ase.neighborlist.natural_cutoffs function).
+        retag (bool): If false, a copy of atoms is used for tagging, leaving the original
+            tags unmodified.
+
+    Returns:
+        groups (dict): dict of all indices and elements corresponding to
+            each group of tagged atoms.
+    """
+    from ase.neighborlist import NeighborList
+    from ase.neighborlist import natural_cutoffs
+    if not retag:
+        atoms = atoms.copy()
+    nl = NeighborList(natural_cutoffs(atoms, mult=mult), self_interaction=False, bothways=True)
+    nl.update(atoms)
+    atoms.set_tags(0) #initialize all tags to 0
+    tag_index = 1
+    groups = {}
+    # Grabs atom from subset, tags all connected atoms
+    # with tag_index until all atoms in subset are tagged. Repeats until no atoms are untagged
+    while 0 in atoms.get_tags():
+        groups[tag_index] = {}
+        possible_atoms = [a.index for a in atoms if a.tag == 0] # all current untagged atoms
+        neighbor_indices = [possible_atoms[0]] # grabs first untagged atom
+        for i in neighbor_indices: # finds all connected atoms, tags, and adds to list of iterables
+            new_atoms = [k for k in list(nl.get_neighbors(i)[0]) if atoms[k].tag == 0]
+            atoms[i].tag = tag_index
+            for j in new_atoms:
+                atoms[j].tag = tag_index
+            neighbor_indices.extend(new_atoms)
+
+        groups[tag_index]["indices"] = [a.index for a in atoms if a.tag == tag_index]
+        symbols = [a.symbol for a in atoms if a.tag == tag_index]
+        groups[tag_index]["elements"] = list(np.unique(symbols))
+        tag_index += 1
+
+    return groups
+
+
 def read_db(db_name, indices):
     """
     Reads ase db and returns entries as list of Atoms objects.
