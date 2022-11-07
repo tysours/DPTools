@@ -73,7 +73,7 @@ class DeepInput:
             for atoms in all_atoms:
                 if not hasattr(self, "atoms"):
                     self.atoms = atoms.copy() # saving for atom typing
-                self._check_indexing(list(row.numbers))
+                self._check_indexing(list(atoms.numbers))
                 positions.append(atoms.positions.flatten())
                 forces.append(atoms.get_forces().flatten())
                 energies.append(atoms.get_potential_energy())
