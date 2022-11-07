@@ -203,7 +203,8 @@ class LammpsInput:
         indices += np.ones(len(indices), dtype="int64")
         constrained = " ".join(list(map(str, indices)))
         self.constraints = f"group constrained id {constrained}"
-        self.constraints += "\nfix constraints constrained setforce 0.0 0.0 0.0"
+        self.constraints += "\ngroup unconstrained subtract all constrained"
+        self.constraints += "\n\nfix constraints constrained setforce 0.0 0.0 0.0"
 
     def write_geometry(self, key):
         """
