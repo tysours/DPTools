@@ -378,6 +378,7 @@ class GCMC(Simulation):
             mol = build.molecule(molecule)
         if mol.cell.sum() == 0.0: # need cell or lammps crashes
             mol.cell = self.atoms[0].cell.copy()
+            mol.center()
 
         mol_tags = [self.type_map[m.symbol] + 1 for m in mol] # tag types for lammps mol writer
         mol.set_tags(mol_tags)
@@ -406,6 +407,7 @@ class GCMC(Simulation):
         self._warn_unused(**kwargs)
 
         commands = [
+                "compute_modify  thermo_temp dynamic/dof yes",
                 f"molecule mol mol.{self._mol}",
                 f"group {self._mol} molecule 0",
                 f"fix dpgcmc {self._mol} gcmc 1 {n_ex} {n_mc} 0 {seed()} "\
@@ -417,6 +419,10 @@ class GCMC(Simulation):
                 ]
 
         return commands
+
+    def process(self, file_out=None):
+        atoms = read_dump("gcmc.dump", self.type_map)
+        write(self.file_out, atoms)
 
 
 Simulations = {
