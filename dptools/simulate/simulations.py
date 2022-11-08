@@ -33,6 +33,7 @@ class Simulation:
         elif not isinstance(atoms, list):
             atoms = [atoms]
         self.atoms = atoms
+
         self.graph = graph
         self.type_map = type_map
         self.path = path
@@ -187,6 +188,10 @@ class NVT(Simulation):
         if pre_opt:
             self.pre_opt(200)
 
+        # group 'unconstrained' created by lammps_io.LammpsInput if constraints present
+        # need to specify only unconstrained atoms for velocity command
+        self._unconstrained = "unconstrained" if self.atoms[0].constraints else "all"
+
         self.commands = self.get_commands(**kwargs)
 
     def get_commands(self, steps=10000, timestep=0.5, Ti=298.0, Tf=298.0, equil_steps=1000, write_freq=100, disp_freq=100, **kwargs):
@@ -199,7 +204,7 @@ class NVT(Simulation):
             "run_style verlet",
             "timestep ${dt}",
             # XXX: Add customizable velocity keywords as args?
-            f"velocity all create {Ti} {seed()} rot yes mom yes dist gaussian",
+            f"velocity {self._unconstrained} create {Ti} {seed()} rot yes mom yes dist gaussian",
             f"fix equil all nvt temp {Ti} {Ti} ${{tdamp}}",
             f"run {equil_steps}",
              "unfix equil",
@@ -221,6 +226,10 @@ class NPT(Simulation):
         if pre_opt:
             self.pre_opt(200, cell=True)
 
+        # group 'unconstrained' created by lammps_io.LammpsInput if constraints present
+        # need to specify only unconstrained atoms for velocity command
+        self._unconstrained = "unconstrained" if self.atoms[0].constraints else "all"
+
         self.commands = self.get_commands(**kwargs)
 
     def get_commands(self, steps=10000, timestep=0.5, Pi=0.0, Pf=0.0, Ti=298.0, Tf=298.0, equil_steps=1000, write_freq=100, disp_freq=100, **kwargs):
@@ -234,7 +243,7 @@ class NPT(Simulation):
             "run_style verlet",
             "timestep ${dt}",
             # XXX: Add customizable velocity keywords as args?
-            f"velocity all create {Ti} {seed()} rot yes mom yes dist gaussian",
+            f"velocity {self._unconstrained} create {Ti} {seed()} rot yes mom yes dist gaussian",
             f"fix equil all npt temp {Ti} {Ti} ${{tdamp}} tri {Pi} {Pi} ${{pdamp}}",
             f"run {equil_steps}",
              "unfix equil",
