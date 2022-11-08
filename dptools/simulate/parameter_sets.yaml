@@ -23,7 +23,7 @@ nvt-md:
   equil_steps: 1000
   write_freq: 100
   disp_freq: 100
-  pre_opt: true
+  pre_opt: false
 npt-md:
   type: npt-md
   steps: 10000
@@ -35,7 +35,7 @@ npt-md:
   equil_steps: 1000
   write_freq: 100
   disp_freq: 100
-  pre_opt: true
+  pre_opt: false
 eos:
   type: eos
   nsw: 500

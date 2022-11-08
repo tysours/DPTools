@@ -184,7 +184,7 @@ class CellOpt(Simulation):
 class NVT(Simulation):
     calc_type = "nvt-md"
 
-    def setup(self, pre_opt=True, **kwargs):
+    def setup(self, pre_opt=False, **kwargs):
         if pre_opt:
             self.pre_opt(200)
 
@@ -222,7 +222,7 @@ class NVT(Simulation):
 class NPT(Simulation):
     calc_type = "npt-md"
 
-    def setup(self, pre_opt=True, **kwargs):
+    def setup(self, pre_opt=False, **kwargs):
         if pre_opt:
             self.pre_opt(200, cell=True)
 
