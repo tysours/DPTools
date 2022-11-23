@@ -19,16 +19,15 @@ software, only familiarity with the popular ASE_ python package is needed.
    :maxdepth: 3
    :caption: Getting Started
 
-   overview
    installation
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Usage
 
    commands/index
    tutorials/index
-   faq
+   faq/index
 
 .. toctree::
    :maxdepth: 5

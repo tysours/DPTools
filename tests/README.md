@@ -1,1 +1,1 @@
-Simple tests for CLI commands and optional args
+Simple tests (mostly examples) for CLI commands and optional args
