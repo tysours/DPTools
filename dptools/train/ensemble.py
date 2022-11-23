@@ -103,7 +103,7 @@ class SampleConfigs:
         i_configs = np.where(np.logical_and(self.dev>=lo, self.dev<=hi))[0]
         n_sample = n if n < len(i_configs) else len(i_configs)
         i_new_configs = random.sample(list(i_configs), n_sample)
-        new_configs = [self.configs[i] for i in i_new_configs]
+        new_configs = [self.configs[i] for i in sorted(i_new_configs)]
         return new_configs
 
     def plot(self, dev=None, steps=False, ax=None, color=None, label=None):
