@@ -144,7 +144,14 @@ class CLI(BaseCLI):
         from dptools.env import get_dpfaults
         hpc_info = get_dpfaults(key="sbatch")
         sbatch_comment = hpc_info.pop("SBATCH_COMMENT")
-        commands = ["dp train in.json", "dp freeze -o graph.pb"]
+        commands = [
+                "if [[ -e 'checkpoint' ]]; then",
+                "\tdp train --restart model.ckpt in.json",
+                "else",
+                "\tdp train in.json",
+                "fi\n",
+                "dp freeze -o graph.pb",
+                ]
         jobs = SlurmJob(sbatch_comment,
                         commands=commands,
                         directories=self.dirs,
