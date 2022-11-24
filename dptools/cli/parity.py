@@ -68,4 +68,5 @@ class CLI(BaseCLI):
         with open("in.json") as file:
             params = json.loads(file.read())
         systems = params["training"]["training_data"]["systems"]
-        return [f"{s.split('/train')[0]}/test/set.000" for s in systems]
+        test_sets = [os.path.join(s, "../test/set.000") for s in systems]
+        return test_sets
