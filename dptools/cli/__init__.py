@@ -16,6 +16,7 @@ commands = (
     "get",
     "reset",
     "info",
+    "shake",
 )
 
 class BaseCLI:
