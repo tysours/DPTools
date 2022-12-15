@@ -77,7 +77,7 @@ def main():
                                      formatter_class=MyFormatter,
                                      )
     parser.add_argument("--version", action="version", version=__version__)
-    subparsers = parser.add_subparsers(dest="command")
+    subparsers = parser.add_subparsers(title="commands", dest="command")
     # TODO: Add logging
     command_clis = {}
     for comm in commands:
