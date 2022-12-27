@@ -54,17 +54,17 @@ def get_dpfaults(key="model"):
     """
     default_vals = get_env()
 
-    if key == "model":
-        keys = ["DPTOOLS_MODEL", "DPTOOLS_TYPE_MAP"]
-        defaults = tuple([default_vals.get(k) for k in keys])
+    if key in ["model", "ensemble"]:
+        keys = ["DPTOOLS_TYPE_MAP", "DPTOOLS_MODEL"]
+        if key == "ensemble":
+            n = 2
+            while default_vals.get(f"DPTOOLS_MODEL{n}"):
+                keys.append(f"DPTOOLS_MODEL{n}")
+                n += 1
 
-    elif key == "ensemble":
-        keys = ["DPTOOLS_TYPE_MAP",
-                "DPTOOLS_MODEL",
-                "DPTOOLS_MODEL2",
-                "DPTOOLS_MODEL3",
-                "DPTOOLS_MODEL4"]
-        defaults = tuple([default_vals.get(k) for k in keys])
+        defaults = tuple(
+                [default_vals.get(k) for k in sorted(keys) if default_vals.get(k)]
+                    )
 
     elif key == "sbatch":
         keys = ["SBATCH_COMMENT",
