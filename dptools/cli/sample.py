@@ -71,7 +71,8 @@ class CLI(BaseCLI):
             if ensemble is not None and len(ensemble) == 1:
                 load(ensemble[0])
             defaults = get_dpfaults(key="ensemble")
-            self.type_map, *ensemble = defaults
+            #self.type_map, *ensemble = defaults
+            *ensemble, self.type_map = defaults
         else:
             self.type_map = graph2typemap(ensemble[0])
         self.ensemble = ensemble
