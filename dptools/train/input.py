@@ -75,7 +75,7 @@ class DeepInput:
                     self.atoms = atoms.copy() # saving for atom typing
                 self._check_indexing(list(atoms.numbers))
                 positions.append(atoms.positions.flatten())
-                forces.append(atoms.get_forces().flatten())
+                forces.append(atoms.get_forces(apply_constraint=0).flatten())
                 energies.append(atoms.get_potential_energy())
                 box.append(atoms.cell.array.flatten())
 
