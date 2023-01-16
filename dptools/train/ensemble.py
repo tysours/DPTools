@@ -61,7 +61,10 @@ class SampleConfigs:
 
         models = [DP(g) for g in self.graphs]
 
-        dev = calc_model_devi(pos, cell, types, models, nopbc=False)[:, 4]
+        try:
+            dev = calc_model_devi(pos, cell, types, models, nopbc=False)[:, 4]
+        except TypeError: # nopbc removed in later deepmd-kit versions
+            dev = calc_model_devi(pos, cell, types, models)[:, 4]
         np.save("dev.npy", dev)
         return dev
 
