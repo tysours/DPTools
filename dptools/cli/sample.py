@@ -41,7 +41,7 @@ class CLI(BaseCLI):
                 help="Min value of eps_t (force dev) to select new configs from")
         self.parser.add_argument("--hi", type=float, default=0.35,
                 help="Max value of eps_t (force dev) to select new configs from")
-        self.parser.add_argument("-o", "--output", nargs=1, type=str, default="new_configs.traj",
+        self.parser.add_argument("-o", "--output", type=str, default="new_configs.traj",
                 help="File to write new configurations to")
         self.parser.add_argument("-p", "--plot-dev", action="store_true",
                 help="Plot histogram of max force deviation of model ensemble for each config")
@@ -50,7 +50,7 @@ class CLI(BaseCLI):
 
 
     def main(self, args):
-        self.outfile = os.path.basename(args.output[0])
+        self.outfile = os.path.basename(args.output)
         self.load_ensemble(args.model_ensemble) # sets self.type_map and self.graphs
         self.set_configs(args.configurations)
         self.devs = [] # max force deviation of model ensemble
