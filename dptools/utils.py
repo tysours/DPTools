@@ -4,7 +4,7 @@ Assorted utilities for plots, reading things, converting things, etc.
 import numpy as np
 from ase import Atoms
 from ase.io import write, read
-from ase.io.formats import string2index
+from ase.io.formats import string2index, UnknownFileTypeError
 from ase.db import connect
 from ase.data import chemical_symbols
 import json
@@ -362,7 +362,11 @@ class Converter:
     def read(self, **kwargs):
         self.atoms = []
         for i in self.inputs:
-            atoms = self.reader(i, index=self.indices, **kwargs)
+            try:
+                atoms = self.reader(i, index=self.indices, **kwargs)
+            except UnknownFileTypeError:
+                print(f"Warning: {i} empty, ignoring file")
+                continue
             if len(self.atoms) > 0 and len(atoms) > 1:
                 # check to see if first image is identical to last image of previous file
                 # primarily for concatenating MD runs from flex/overrun jobs
