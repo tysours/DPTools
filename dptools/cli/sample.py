@@ -50,7 +50,7 @@ class CLI(BaseCLI):
 
 
     def main(self, args):
-        self.outfile = os.path.basename(args.output)
+        self.outfile = os.path.basename(args.output[0])
         self.load_ensemble(args.model_ensemble) # sets self.type_map and self.graphs
         self.set_configs(args.configurations)
         self.devs = [] # max force deviation of model ensemble
