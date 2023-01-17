@@ -78,7 +78,9 @@ class LmpCalc(Calculator):
 
         if update:
             # lammps is annoying and jumbles up indices sometimes
-            ids = self.lmp.numpy.extract_atom("id").T[0]
+            ids = self.lmp.numpy.extract_atom("id")
+            if ids.ndim == 2: # old lammps versions return 2d array
+                ids = ids.T[0]
             self._sort = np.argsort(ids)
 
             self.update_atoms(atoms)
