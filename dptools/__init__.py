@@ -1,5 +1,5 @@
 import os
-__version__ = '1.1.1'
+__version__ = '1.1.2'
 
 # suppress annoying tensorflow warnings
 os.environ["KMP_WARNINGS"] = "0"
