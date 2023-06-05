@@ -137,12 +137,17 @@ class CLI(BaseCLI):
         check2 = "validation" in os.listdir(directory)
         return check1 and check2
 
+    @staticmethod
+    def get_hpc_info():
+        from dptools.env import get_dpfaults
+        hpc_info = get_dpfaults(key="sbatch")
+        return hpc_info
+
     def submit_jobs(self):
         """
         Write and submit Slurm job(s) to train model or ensemble of models.
         """
-        from dptools.env import get_dpfaults
-        hpc_info = get_dpfaults(key="sbatch")
+        hpc_info = self.get_hpc_info()
         sbatch_comment = hpc_info.pop("SBATCH_COMMENT")
         commands = [
                 "if [[ -e 'checkpoint' ]]; then",
