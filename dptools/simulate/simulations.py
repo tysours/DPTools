@@ -403,6 +403,16 @@ class GCMC(Simulation):
                          nsw=200,
                          )
             optmol.run()
+        else: # SPE to get molecule energy for gcmc if not optimizing
+            spemol = SPE(mol,
+                         self.graph,
+                         self.type_map,
+                         file_out=f"{self._mol}.traj",
+                         path=self.path,
+                         )
+            spemol.run()
+
+        self._e_mol = mol.get_potential_energy()
 
         molin = MolInput(mol, self.type_map, name=self._mol)
         molin.write() # write lammps molecule file
@@ -420,7 +430,8 @@ class GCMC(Simulation):
                 f"molecule mol mol.{self._mol}",
                 f"group {self._mol} molecule 0",
                 f"fix dpgcmc {self._mol} gcmc 1 {n_ex} {n_mc} 0 {seed()} "\
-                        f"{T} 0.0 {dmax} mol mol pressure {P} full_energy",
+                        f"{T} 0.0 {dmax} mol mol pressure {P} full_energy"\
+                        f" intra_energy {self._e_mol}",
                 f"thermo {disp_freq}",
                 f"run {equil_steps}",
                 f"dump 1 all custom {write_freq} gcmc.dump id type x y z",
